@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ML Model Builder</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- ==========================================
+             HEADER
+        =========================================== -->
+
+        <header class="app-header">
+            <div class="header-content">
+                <h1>ML Model Builder</h1>
+                <p>
+                    Train, save, and use custom machine learning models.
+                </p>
+            </div>
+        </header>
+
+
+        <!-- ==========================================
+             TABS
+        =========================================== -->
+
+        <nav class="tabs" aria-label="Application sections">
+
+            <button
+                class="tab-button active"
+                data-tab="models-tab">
+                Models
+            </button>
+
+            <button
+                class="tab-button"
+                data-tab="train-tab">
+                Train Model
+            </button>
+
+        </nav>
+
+
+        <main class="tab-content">
+
+
+            <!-- ======================================
+                 TAB 1 — MODELS
+            ======================================= -->
+
+            <section
+                id="models-tab"
+                class="tab-panel active">
+
+                <div class="section-header">
+                    <h2>Available Models</h2>
+
+                    <p>
+                        Select a trained model to make predictions.
+                    </p>
+                </div>
+
+                <div
+                    id="models-container"
+                    class="models-container"
+                >
+                    <div class="models-loading">
+                        Loading models...
+                    </div>
+                </div>
+
+                <!-- Dynamic prediction area -->
+
+                <div
+                    id="prediction-panel"
+                    class="prediction-panel hidden">
+
+                    <div class="section-header">
+
+                        <h2 id="prediction-model-name">
+                            Model Prediction
+                        </h2>
+
+                        <p id="prediction-model-description">
+                            Enter the required information to
+                            generate a prediction.
+                        </p>
+
+                    </div>
+
+
+                    <form id="prediction-form">
+
+                        <!-- Prediction fields will be generated
+                             dynamically from model JSON -->
+
+                        <div
+                            id="prediction-fields"
+                            class="prediction-fields">
+                        </div>
+
+
+                        <div class="prediction-actions">
+
+                            <button
+                                type="submit"
+                                id="predict-button"
+                                class="primary-button"
+                            >
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                Predict
+                            </button>
+
+                            <button
+                                type="button"
+                                id="close-prediction-button"
+                                class="secondary-button"
+                            >
+                                Back to Models
+                            </button>
+
+                        </div>
+
+                    </form>
+
+
+                    <!-- Prediction result -->
+
+                    <div
+                        id="prediction-result"
+                        class="prediction-result hidden">
+
+                        <h3>Prediction</h3>
+
+                        <div
+                            id="prediction-label"
+                            class="prediction-label">
+                        </div>
+
+                        <div
+                            id="prediction-probability"
+                            class="prediction-probability">
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- ======================================
+                 TAB 2 — TRAIN MODEL
+            ======================================= -->
+
+            <section
+                id="train-tab"
+                class="tab-panel">
+
+                <div class="section-header">
+
+                    <h2>Train Custom Model</h2>
+
+                    <p>
+                        Configure and train your own binary
+                        classification model.
+                    </p>
+
+                </div>
+
+
+                <!-- ==================================
+                     STEP 1 — MODEL INFORMATION
+                =================================== -->
+
+                <div class="form-section">
+
+                    <div class="form-section-header">
+
+                        <span class="step-number">
+                            1
+                        </span>
+
+                        <div>
+                            <h3>Model Information</h3>
+
+                            <p>
+                                Give your model a name.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="model-name">
+                            Model Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="model-name"
+                            name="model-name"
+                            placeholder="e.g. My Loan Risk Model"
+                            autocomplete="off">
+
+                        <span
+                            id="model-name-error"
+                            class="field-error">
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <!-- ==================================
+                     STEP 2 — DATASET
+                =================================== -->
+
+                <div class="compact-sections">
+                    <div class="form-section">
+
+                        <div class="form-section-header">
+
+                            <span class="step-number">
+                                2
+                            </span>
+
+                            <div>
+
+                                <h3>Training Dataset</h3>
+
+                                <p>
+                                    Upload the CSV file that will be
+                                    used to train the model.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="file-upload-area">
+
+                            <label
+                                for="training-csv"
+                                class="file-upload-label">
+
+                                <span class="upload-icon">
+                                    ↑
+                                </span>
+
+                                <span>
+                                    Choose CSV File
+                                </span>
+
+                                <small>
+                                    CSV files only
+                                </small>
+
+                            </label>
+
+                            <input
+                                type="file"
+                                id="training-csv"
+                                name="training-csv"
+                                accept=".csv">
+
+                        </div>
+
+                        <div
+                            id="dataset-info"
+                            class="dataset-info hidden">
+                        </div>
+
+                        <div
+                            id="dataset-analysis-status"
+                            class="dataset-analysis-status hidden">
+                        </div>
+
+                        <div
+                            id="dataset-error"
+                            class="validation-message error">
+                        </div>
+
+                    </div>
+
+                    <!-- ==================================
+                        STEP 3 — MODEL SELECTION
+                    =================================== -->
+
+                    <div class="form-section">
+
+                        <div class="form-section-header">
+
+                            <span class="step-number">
+                                3
+                            </span>
+
+                            <div>
+
+                                <h3>Model Selection</h3>
+
+                                <p>
+                                    Choose the classification algorithm
+                                    for your model.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="model-choice">
+                                Classification Model
+                            </label>
+
+                            <select
+                                id="model-choice"
+                                name="model-choice">
+
+                                <option value="">
+                                    Select a model
+                                </option>
+
+                                <option value="logistic_regression">
+                                    Logistic Regression
+                                </option>
+
+                                <option value="decision_tree">
+                                    Decision Tree
+                                </option>
+
+                                <option value="random_forest">
+                                    Random Forest
+                                </option>
+
+                                <option value="gradient_boosting">
+                                    Gradient Boosting
+                                </option>
+
+                                <option value="knn">
+                                    K-Nearest Neighbors
+                                </option>
+
+                                <option value="svm">
+                                    Support Vector Machine
+                                </option>
+
+                            </select>
+
+                            <span
+                                id="model-choice-error"
+                                class="field-error">
+                            </span>
+
+                        </div>
+
+                    </div>
+                </div>
+                <!-- ==================================
+                     STEP 4 — INPUT FIELDS
+                =================================== -->
+
+                <div class="form-section">
+
+                    <div class="form-section-header">
+
+                        <span class="step-number">
+                            4
+                        </span>
+
+                        <div>
+
+                            <h3>Input Fields</h3>
+
+                            <p>
+                                Define the variables that your
+                                model will use for prediction.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="input-fields-header">
+
+                        <span>
+                            Field Name
+                        </span>
+
+                        <span>
+                            Nature
+                        </span>
+
+                        <span>
+                            Missing Value Handling
+                        </span>
+
+                        <span>
+                            Feature Engineering
+                        </span>
+
+                        <span>
+                            Scaling / Encoding
+                        </span>
+
+                        <span>
+                            Action
+                        </span>
+
+                    </div>
+
+
+                    <!-- JavaScript will add field rows here -->
+
+                    <div
+                        id="input-fields-container"
+                        class="input-fields-container">
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="add-input-field"
+                        class="secondary-button">
+
+                        + Add Input Field
+
+                    </button>
+
+
+                    <div
+                        id="input-fields-error"
+                        class="validation-message error">
+                    </div>
+
+                </div>
+
+
+
+                <!-- ==================================
+                     STEP 5 — TARGET COLUMN
+                =================================== -->
+
+                <div class="form-section">
+
+                    <div class="form-section-header">
+
+                        <span class="step-number">
+                            5
+                        </span>
+
+                        <div>
+
+                            <h3>Target Column</h3>
+
+                            <p>
+                                Define the column that the model
+                                will predict.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="target-selection">
+
+                        <div class="form-group">
+
+                            <label for="target-column">
+                                Select Target Column
+                            </label>
+
+                            <select
+                                id="target-column"
+                                name="target-column"
+                                disabled>
+
+                                <option value="">
+                                    Upload a CSV first
+                                </option>
+
+                            </select>
+
+                            <small class="form-help">
+                                Only categorical columns with exactly
+                                two classes are available as targets.
+                            </small>
+
+                            <span
+                                id="target-column-error"
+                                class="field-error">
+                            </span>
+
+                        </div>
+
+                        <!-- ------------------------------------------
+                            POSITIVE CLASS
+                        ------------------------------------------- -->
+
+                        <div class="form-group">
+
+                            <label for="positive-class">
+                                Positive Class
+                            </label>
+
+                            <select
+                                id="positive-class"
+                                name="positive-class"
+                                disabled>
+
+                                <option value="">
+                                    Select a target column first
+                                </option>
+
+                            </select>
+
+                            <small class="form-help">
+                                Select which target class represents
+                                the positive outcome.
+                            </small>
+
+                            <span
+                                id="positive-class-error"
+                                class="field-error">
+                            </span>
+
+                        </div>
+
+                        <!-- ------------------------------------------
+                            NEGATIVE CLASS
+                        ------------------------------------------- -->
+
+                        <div
+                            id="negative-class-container"
+                            class="target-class-summary hidden">
+
+                            <span class="target-class-label">
+                                Negative Class
+                            </span>
+
+                            <span
+                                id="negative-class"
+                                class="target-class-value">
+                                —
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- ==================================
+                     STEP 6 — VALIDATION / TRAINING
+                =================================== -->
+                <div
+                    id="dataset-validation-report"
+                    class="dataset-validation-report hidden">
+                </div>
+
+                <div class="form-section actions-section">
+                    <div class="action-buttons">
+
+                        <button
+                            type="button"
+                            id="validate-dataset"
+                            class="secondary-button">
+
+                            Validate Dataset
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="train-model"
+                            class="primary-button"
+                            disabled>
+
+                            Train Model
+
+                        </button>
+
+                    </div>
+
+                    <div
+                        id="training-status"
+                        class="training-status">
+                    </div>
+                </div>
+
+
+
+                <!-- ==================================
+                     TRAINING RESULTS
+                =================================== -->
+
+                <div
+                    id="training-results"
+                    class="training-results hidden">
+
+                    <div class="section-header">
+
+                        <h2>Training Complete</h2>
+
+                        <p>
+                            Your model has been trained successfully.
+                        </p>
+
+                    </div>
+
+
+                    <div class="model-metrics">
+
+                        <div class="metric-card">
+                            <span class="metric-label">Test Accuracy</span>
+                            <span
+                                id="metric-accuracy"
+                                class="metric-value"
+                            >
+                                —
+                            </span>
+                        </div>
+
+                        <div class="metric-card">
+                            <span class="metric-label">F1 Score</span>
+                            <span
+                                id="metric-f1"
+                                class="metric-value"
+                            >
+                                —
+                            </span>
+                        </div>
+
+                        <div class="metric-card">
+                            <span class="metric-label">ROC-AUC</span>
+                            <span
+                                id="metric-roc-auc"
+                                class="metric-value"
+                            >
+                                —
+                            </span>
+                        </div>
+
+                        <div class="metric-card">
+                            <span class="metric-label">Training Rows</span>
+                            <span
+                                id="metric-train-rows"
+                                class="metric-value"
+                            >
+                                —
+                            </span>
+                        </div>
+
+                        <div class="metric-card">
+                            <span class="metric-label">Test Precision</span>
+                            <span id="metric-precision" class="metric-value">—</span>
+                        </div>
+
+                        <div class="metric-card">
+                            <span class="metric-label">Test Recall</span>
+                            <span id="metric-recall" class="metric-value">—</span>
+                        </div>
+
+                        <div class="metric-card">
+                            <span class="metric-label">Validation Rows</span>
+                            <span id="metric-validation-rows" class="metric-value">—</span>
+                        </div>
+
+                        <div class="metric-card">
+                            <span class="metric-label">Test Rows</span>
+                            <span id="metric-test-rows" class="metric-value">—</span>
+                        </div>
+
+                    </div>
+
+                    <p id="validation-metrics-summary" class="form-help"></p>
+
+
+                    <div class="save-model-section">
+
+                        <h3 id="trained-model-name">
+                            Model
+                        </h3>
+
+                        <p>
+                            The model is currently temporary.
+                            Save it to make it available in the
+                            Models tab.
+                        </p>
+
+
+                        <button
+                            type="button"
+                            id="save-model"
+                            class="primary-button">
+                            Save Model
+                        </button>
+
+                        <div
+                            id="save-model-status"
+                            class="validation-message">
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- ==========================================
+             FOOTER
+        =========================================== -->
+
+        <footer class="app-footer">
+
+            <p>
+                ML Model Builder
+            </p>
+
+        </footer>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

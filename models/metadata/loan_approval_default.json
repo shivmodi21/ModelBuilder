@@ -1,0 +1,229 @@
+{
+    "model_id": "loan_approval_default",
+    "model_name": "Loan Approval",
+    "model_file": "loan_approval.pkl",
+    "model_type": "logistic_regression",
+    "task": "binary_classification",
+    "target": {
+        "name": "Loan_Status",
+        "classes": [
+            "N",
+            "Y"
+        ]
+    },
+    "input_fields": [
+        {
+            "id": 1788287555130.2004,
+            "name": "Gender",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "Male",
+                "Female"
+            ]
+        },
+        {
+            "id": 1788287555130.28,
+            "name": "Married",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "No",
+                "Yes"
+            ]
+        },
+        {
+            "id": 1788287555130.4897,
+            "name": "Dependents",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "0",
+                "1",
+                "2",
+                "3+"
+            ]
+        },
+        {
+            "id": 1788287555130.414,
+            "name": "Education",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "Graduate",
+                "Not Graduate"
+            ]
+        },
+        {
+            "id": 1788287555130.7058,
+            "name": "Self_Employed",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "No",
+                "Yes"
+            ]
+        },
+        {
+            "id": 1788287555130.429,
+            "name": "ApplicantIncome",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1788287555130.932,
+            "name": "CoapplicantIncome",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1788287555130.916,
+            "name": "LoanAmount",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1788287555130.0667,
+            "name": "Loan_Amount_Term",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1788287555130.056,
+            "name": "Credit_History",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "1.0",
+                "0.0"
+            ]
+        },
+        {
+            "id": 1788287555130.2883,
+            "name": "Property_Area",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "Urban",
+                "Rural",
+                "Semiurban"
+            ]
+        }
+    ],
+    "metrics": {
+        "validation": {
+            "accuracy": 0.8536585365853658,
+            "precision": 0.8235294117647058,
+            "recall": 1.0,
+            "f1_score": 0.9032258064516129,
+            "roc_auc": 0.771062271062271
+        },
+        "test": {
+            "accuracy": 0.8548387096774194,
+            "precision": 0.8541666666666666,
+            "recall": 0.9534883720930233,
+            "f1_score": 0.9010989010989011,
+            "roc_auc": 0.8274173806609547
+        }
+    },
+    "deletable": false
+}
