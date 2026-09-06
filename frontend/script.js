@@ -289,6 +289,7 @@ function createModelCard(model) {
     const classes = target.classes;
     const metrics = model.metrics;
     const isDeletable = model.deletable !== false;
+    const task = formatModelName(model.task);
 
     // ---------------------------------------------
     // Input fields
@@ -317,10 +318,7 @@ function createModelCard(model) {
     // ---------------------------------------------
     // Metrics
     // ---------------------------------------------
-
-    const metricsHTML =
-        createMetricsHTML(metrics);
-
+    const metricsHTML = createMetricsHTML(metrics);
 
     // ---------------------------------------------
     // Delete button
@@ -393,7 +391,7 @@ function createModelCard(model) {
                     </span>
 
                     <span class="model-info-value">
-                        Binary Classification
+                        ${escapeHTML(task)}
                     </span>
 
                 </div>
@@ -483,19 +481,167 @@ function createModelCard(model) {
 
 function createMetricsHTML(metrics) {
 
-    const hasMetrics =
-        metrics &&
-        (
-            metrics.accuracy !== undefined ||
-            metrics.f1_score !== undefined ||
-            metrics.roc_auc !== undefined
-        );
-
-
-    if (!hasMetrics) {
+    if (!metrics) {
         return "";
     }
 
+
+    const validation =
+        metrics.validation || {};
+
+    const test =
+        metrics.test || {};
+
+
+    const hasValidationMetrics =
+        Object.keys(validation).length > 0;
+
+    const hasTestMetrics =
+        Object.keys(test).length > 0;
+
+
+    if (
+        !hasValidationMetrics &&
+        !hasTestMetrics
+    ) {
+        return "";
+    }
+
+
+    // -------------------------------------------------
+    // Create a single metric card
+    // -------------------------------------------------
+
+    function createMetric(
+        label,
+        value
+    ) {
+
+        if (
+            value === undefined ||
+            value === null
+        ) {
+            return "";
+        }
+
+
+        return `
+            <div class="model-metric">
+
+                <span>
+                    ${label}
+                </span>
+
+                <strong>
+                    ${formatMetric(value)}
+                </strong>
+
+            </div>
+        `;
+    }
+
+
+    // -------------------------------------------------
+    // Validation metrics
+    // -------------------------------------------------
+
+    const validationHTML =
+        hasValidationMetrics
+
+            ? `
+                <div class="model-metric-group">
+
+                    <div class="model-metric-group-title">
+                        Validation
+                    </div>
+
+                    <div class="model-metrics">
+
+                        ${createMetric(
+                            "Accuracy",
+                            validation.accuracy
+                        )}
+
+                        ${createMetric(
+                            "Precision",
+                            validation.precision
+                        )}
+
+                        ${createMetric(
+                            "Recall",
+                            validation.recall
+                        )}
+
+                        ${createMetric(
+                            "F1",
+                            validation.f1_score
+                        )}
+
+                        ${createMetric(
+                            "ROC-AUC",
+                            validation.roc_auc
+                        )}
+
+                    </div>
+
+                </div>
+              `
+
+            : "";
+
+
+    // -------------------------------------------------
+    // Test metrics
+    // -------------------------------------------------
+
+    const testHTML =
+        hasTestMetrics
+
+            ? `
+                <div class="model-metric-group">
+
+                    <div class="model-metric-group-title">
+                        Test
+                    </div>
+
+                    <div class="model-metrics">
+
+                        ${createMetric(
+                            "Accuracy",
+                            test.accuracy
+                        )}
+
+                        ${createMetric(
+                            "Precision",
+                            test.precision
+                        )}
+
+                        ${createMetric(
+                            "Recall",
+                            test.recall
+                        )}
+
+                        ${createMetric(
+                            "F1",
+                            test.f1_score
+                        )}
+
+                        ${createMetric(
+                            "ROC-AUC",
+                            test.roc_auc
+                        )}
+
+                    </div>
+
+                </div>
+              `
+
+            : "";
+
+
+    // -------------------------------------------------
+    // Final HTML
+    // -------------------------------------------------
 
     return `
         <div class="model-metrics-section">
@@ -504,57 +650,9 @@ function createMetricsHTML(metrics) {
                 Performance
             </span>
 
-            <div class="model-metrics">
+            ${validationHTML}
 
-                ${
-                    metrics.accuracy !== undefined
-                        ? `
-                            <div class="model-metric">
-                                <span>Accuracy</span>
-                                <strong>
-                                    ${formatMetric(
-                                        metrics.accuracy
-                                    )}
-                                </strong>
-                            </div>
-                          `
-                        : ""
-                }
-
-
-                ${
-                    metrics.f1_score !== undefined
-                        ? `
-                            <div class="model-metric">
-                                <span>F1</span>
-                                <strong>
-                                    ${formatMetric(
-                                        metrics.f1_score
-                                    )}
-                                </strong>
-                            </div>
-                          `
-                        : ""
-                }
-
-
-                ${
-                    metrics.roc_auc !== undefined &&
-                    metrics.roc_auc !== null
-                        ? `
-                            <div class="model-metric">
-                                <span>ROC-AUC</span>
-                                <strong>
-                                    ${formatMetric(
-                                        metrics.roc_auc
-                                    )}
-                                </strong>
-                            </div>
-                          `
-                        : ""
-                }
-
-            </div>
+            ${testHTML}
 
         </div>
     `;
@@ -3616,7 +3714,6 @@ trainModelButton.addEventListener(
                     }
                 );
 
-
             const result = await response.json();
 
             // -----------------------------------------
@@ -3624,55 +3721,31 @@ trainModelButton.addEventListener(
             // -----------------------------------------
 
             if (!response.ok) {
-
-                displayTrainingError(
-                    result
-                );
-
+                displayTrainingError(result);
                 return;
-
             }
-
 
             // -----------------------------------------
             // Store training ID
             // -----------------------------------------
 
-            currentTrainingId =
-                result.training_id;
+            currentTrainingId = result.training_id;
 
 
             // -----------------------------------------
             // Display metrics
             // -----------------------------------------
 
-            displayTrainingResult(
-                result
-            );
-
-
+            displayTrainingResult(result);
         } catch (error) {
+            console.error("Training error:", error);
 
-            console.error(
-                "Training error:",
-                error
-            );
-
-
-            trainingStatus.textContent =
-                "Unable to connect to the backend.";
-
-            trainingStatus.style.color =
-                "var(--error)";
-
+            trainingStatus.textContent = "Unable to connect to the backend.";
+            trainingStatus.style.color = "var(--error)";
 
         } finally {
-
-            validateDatasetButton.disabled =
-                false;
-
+            validateDatasetButton.disabled = false;
             validateConfiguration();
-
         }
 
     }
@@ -3742,48 +3815,26 @@ function displayTrainingResult(result) {
 
 function displayTrainingError(result) {
 
-    let message =
-        "Model training failed.";
+    let message = "Model training failed.";
 
-
-    if (
-        typeof result.detail === "string"
-    ) {
-
-        message =
-            result.detail;
-
+    if (typeof result.detail === "string") {
+        message = result.detail;
     }
 
-
-    else if (
-        result.detail &&
-        typeof result.detail === "object"
-    ) {
+    else if (result.detail && typeof result.detail === "object") {
 
         if (result.detail.error) {
-
-            message =
-                result.detail.error;
-
+            message = result.detail.error;
         }
 
         else if (result.detail.message) {
-
-            message =
-                result.detail.message;
-
+            message = result.detail.message;
         }
 
     }
 
-
-    trainingStatus.textContent =
-        "❌ " + message;
-
-    trainingStatus.style.color =
-        "var(--error)";
-
+    trainingStatus.textContent = "❌ " + message;
+    trainingStatus.style.color = "var(--error)";
 }
 
 // =========================================================
@@ -3797,27 +3848,17 @@ saveModelButton.addEventListener(
         // ---------------------------------------------
         // Make sure a training session exists
         // ---------------------------------------------
-
         if (!currentTrainingId) {
-
-            saveModelStatus.textContent =
-                "No trained model is available.";
-
-            saveModelStatus.className =
-                "validation-message error";
-
+            saveModelStatus.textContent = "No trained model is available.";
+            saveModelStatus.className = "validation-message error";
             return;
-
         }
-
 
         // ---------------------------------------------
         // Prepare request
         // ---------------------------------------------
 
-        const formData =
-            new FormData();
-
+        const formData = new FormData();
 
         formData.append(
             "training_id",

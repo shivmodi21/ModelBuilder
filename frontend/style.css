@@ -434,6 +434,19 @@ body {
     margin: 0;
 }
 
+.model-metric-group {
+    margin-top: 10px;
+}
+
+.model-metric-group-title {
+    margin-bottom: 8px;
+
+    color: var(--text-secondary);
+
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
 
 .model-metric {
     display: flex;

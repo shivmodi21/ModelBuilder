@@ -121,9 +121,7 @@ def get_models():
 @app.get("/api/models/{model_id}")
 def get_model(model_id: str):
 
-    metadata = get_metadata(
-        model_id
-    )
+    metadata = get_metadata(model_id)
 
     if metadata is None:
 

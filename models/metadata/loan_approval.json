@@ -1,8 +1,8 @@
 {
-    "model_id": "loan_approval_default",
+    "model_id": "loan_approval",
     "model_name": "Loan Approval",
-    "model_file": "loan_approval_default.pkl",
-    "model_type": "logistic_regression",
+    "model_file": "loan_approval.pkl",
+    "model_type": "gradient_boosting",
     "task": "binary_classification",
     "target": {
         "name": "Loan_Status",
@@ -13,7 +13,7 @@
     },
     "input_fields": [
         {
-            "id": 1788689952149.4368,
+            "id": 1788690237877.58,
             "name": "Gender",
             "nature": "Categorical",
             "missing_value_strategy": "mode",
@@ -32,7 +32,7 @@
             ]
         },
         {
-            "id": 1788689952149.3179,
+            "id": 1788690237877.2434,
             "name": "Married",
             "nature": "Categorical",
             "missing_value_strategy": "mode",
@@ -51,7 +51,7 @@
             ]
         },
         {
-            "id": 1788689952149.728,
+            "id": 1788690237877.377,
             "name": "Dependents",
             "nature": "Categorical",
             "missing_value_strategy": "mode",
@@ -72,7 +72,7 @@
             ]
         },
         {
-            "id": 1788689952149.8975,
+            "id": 1788690237877.4395,
             "name": "Education",
             "nature": "Categorical",
             "missing_value_strategy": "mode",
@@ -91,7 +91,7 @@
             ]
         },
         {
-            "id": 1788689952149.3164,
+            "id": 1788690237877.831,
             "name": "Self_Employed",
             "nature": "Categorical",
             "missing_value_strategy": "mode",
@@ -110,67 +110,67 @@
             ]
         },
         {
-            "id": 1788689952149.2808,
+            "id": 1788690237877.3706,
             "name": "ApplicantIncome",
             "nature": "Numerical",
             "missing_value_strategy": "median",
             "feature_engineering": {
-                "type": "log1p"
+                "type": "none"
             },
             "scaling": {
-                "type": "standardization"
+                "type": "none"
             },
             "encoding": {
                 "type": "none"
             }
         },
         {
-            "id": 1788689952149.6567,
+            "id": 1788690237877.5693,
             "name": "CoapplicantIncome",
             "nature": "Numerical",
             "missing_value_strategy": "median",
             "feature_engineering": {
-                "type": "log1p"
+                "type": "none"
             },
             "scaling": {
-                "type": "standardization"
+                "type": "none"
             },
             "encoding": {
                 "type": "none"
             }
         },
         {
-            "id": 1788689952149.047,
+            "id": 1788690237877.6223,
             "name": "LoanAmount",
             "nature": "Numerical",
             "missing_value_strategy": "median",
             "feature_engineering": {
-                "type": "log1p"
+                "type": "none"
             },
             "scaling": {
-                "type": "standardization"
+                "type": "none"
             },
             "encoding": {
                 "type": "none"
             }
         },
         {
-            "id": 1788689952149.733,
+            "id": 1788690237877.809,
             "name": "Loan_Amount_Term",
             "nature": "Numerical",
             "missing_value_strategy": "median",
             "feature_engineering": {
-                "type": "log1p"
+                "type": "none"
             },
             "scaling": {
-                "type": "standardization"
+                "type": "none"
             },
             "encoding": {
                 "type": "none"
             }
         },
         {
-            "id": 1788689952149.2275,
+            "id": 1788690237877.9744,
             "name": "Credit_History",
             "nature": "Categorical",
             "missing_value_strategy": "mode",
@@ -189,7 +189,7 @@
             ]
         },
         {
-            "id": 1788689952149.064,
+            "id": 1788690237877.8645,
             "name": "Property_Area",
             "nature": "Categorical",
             "missing_value_strategy": "mode",
@@ -211,19 +211,19 @@
     ],
     "metrics": {
         "validation": {
-            "accuracy": 0.8536585365853658,
-            "precision": 0.8235294117647058,
-            "recall": 1.0,
-            "f1_score": 0.9032258064516129,
-            "roc_auc": 0.7652625152625152
+            "accuracy": 0.7479674796747967,
+            "precision": 0.7849462365591398,
+            "recall": 0.8690476190476191,
+            "f1_score": 0.8248587570621468,
+            "roc_auc": 0.7435897435897436
         },
         "test": {
-            "accuracy": 0.8548387096774194,
-            "precision": 0.8541666666666666,
-            "recall": 0.9534883720930233,
-            "f1_score": 0.9010989010989011,
-            "roc_auc": 0.872705018359853
+            "accuracy": 0.8225806451612904,
+            "precision": 0.8636363636363636,
+            "recall": 0.8837209302325582,
+            "f1_score": 0.8735632183908046,
+            "roc_auc": 0.8011015911872705
         }
     },
-    "deletable": false
+    "deletable": true
 }
