@@ -1223,6 +1223,31 @@ const metricF1 =
 const metricRocAuc =
     document.getElementById("metric-roc-auc");
 
+const validationMetricAccuracy =
+    document.getElementById(
+        "validation-metric-accuracy"
+    );
+
+const validationMetricPrecision =
+    document.getElementById(
+        "validation-metric-precision"
+    );
+
+const validationMetricRecall =
+    document.getElementById(
+        "validation-metric-recall"
+    );
+
+const validationMetricF1 =
+    document.getElementById(
+        "validation-metric-f1"
+    );
+
+const validationMetricRocAuc =
+    document.getElementById(
+        "validation-metric-roc-auc"
+    );
+
 const metricTrainRows =
     document.getElementById("metric-train-rows");
 
@@ -2291,8 +2316,12 @@ async function analyzeDataset(
             );
 
 
-        const result =
-            await response.json();
+        const result = await response.json();
+
+        console.log(
+            "Dataset analysis response:",
+            result
+        );
 
 
         if (!response.ok) {
@@ -2321,11 +2350,124 @@ async function analyzeDataset(
         datasetAnalysisStatus.className =
             "dataset-analysis-status success";
 
-        datasetAnalysisStatus.textContent =
-            `✓ Detected ${
-                result.analysis?.columns ||
-                0
-            } CSV columns.`;
+        datasetAnalysisStatus.textContent = `✓ Detected ${result.analysis.columns ?? 0} columns and ${result.analysis.rows ?? 0} rows.`;
+
+        const analysis = result.analysis || {};
+        const totalColumns = analysis.columns ?? 0;
+        const totalRows = analysis.rows ?? 0;
+
+        const columnsInfo =
+            Array.isArray(analysis.columns_info)
+                ? analysis.columns_info
+                : [];
+
+        const targetCandidates =
+            Array.isArray(analysis.target_candidates)
+                ? analysis.target_candidates
+                : [];
+
+
+        // -----------------------------------------
+        // Calculate feature counts
+        // -----------------------------------------
+
+        const numericalFeatures =
+            columnsInfo.filter(
+                column =>
+                    (
+                        column.suggested_nature ||
+                        column.nature
+                    ) === "Numerical"
+            ).length;
+
+        const categoricalFeatures =
+            columnsInfo.filter(
+                column =>
+                    (
+                        column.suggested_nature ||
+                        column.nature
+                    ) === "Categorical"
+            ).length;
+
+        const possibleTargetColumns = targetCandidates.length;
+
+        // -----------------------------------------
+        // Display analysis summary
+        // -----------------------------------------
+
+        datasetAnalysisStatus.innerHTML = `
+            <div class="dataset-analysis-title">
+                ✓ Dataset Analysis Complete
+            </div>
+
+            <div class="dataset-analysis-grid">
+
+                <div class="dataset-analysis-item">
+
+                    <span>
+                        Total available features
+                    </span>
+
+                    <strong>
+                        ${totalColumns}
+                    </strong>
+
+                </div>
+
+
+                <div class="dataset-analysis-item">
+
+                    <span>
+                        Total available data points
+                    </span>
+
+                    <strong>
+                        ${totalRows}
+                    </strong>
+
+                </div>
+
+
+                <div class="dataset-analysis-item">
+
+                    <span>
+                        Possible Numerical Features
+                    </span>
+
+                    <strong>
+                        ${numericalFeatures}
+                    </strong>
+
+                </div>
+
+
+                <div class="dataset-analysis-item">
+
+                    <span>
+                        Possible Categorical Features
+                    </span>
+
+                    <strong>
+                        ${categoricalFeatures}
+                    </strong>
+
+                </div>
+
+
+                <div class="dataset-analysis-item">
+
+                    <span>
+                        Possible Target Columns
+                    </span>
+
+                    <strong>
+                        ${possibleTargetColumns}
+                    </strong>
+
+                </div>
+
+            </div>
+        `;
 
     } catch (error) {
 
@@ -3780,27 +3922,32 @@ function formatMetric(value) {
 
 function displayTrainingResult(result) {
     const testMetrics = result.metrics?.test || result.metrics || {};
-    const validationMetrics = result.metrics?.validation;
+    const validationMetrics = result.metrics?.validation || {};
 
+    // =================================================
+    // TEST METRICS
+    // =================================================
     metricAccuracy.textContent = formatMetric(testMetrics.accuracy);
     metricF1.textContent = formatMetric(testMetrics.f1_score);
     metricPrecision.textContent = formatMetric(testMetrics.precision);
     metricRecall.textContent = formatMetric(testMetrics.recall);
     metricRocAuc.textContent = formatMetric(testMetrics.roc_auc);
+    
+    // =================================================
+    // VALIDATION METRICS
+    // =================================================
+    validationMetricAccuracy.textContent = formatMetric(validationMetrics.accuracy);
+    validationMetricPrecision.textContent = formatMetric(validationMetrics.precision);
+    validationMetricRecall.textContent = formatMetric(validationMetrics.recall);
+    validationMetricF1.textContent = formatMetric(validationMetrics.f1_score);
+    validationMetricRocAuc.textContent = formatMetric(validationMetrics.roc_auc);
+
+    // =================================================
+    // DATASET SPLIT
+    // =================================================
     metricTrainRows.textContent = result.train_rows ?? "—";
     metricValidationRows.textContent = result.validation_rows ?? "—";
     metricTestRows.textContent = result.test_rows ?? "—";
-
-    if (validationMetrics) {
-        validationMetricsSummary.textContent =
-            `Validation — Accuracy: ${formatMetric(validationMetrics.accuracy)}, ` +
-            `Precision: ${formatMetric(validationMetrics.precision)}, ` +
-            `Recall: ${formatMetric(validationMetrics.recall)}, ` +
-            `F1: ${formatMetric(validationMetrics.f1_score)}, ` +
-            `ROC-AUC: ${formatMetric(validationMetrics.roc_auc)}.`;
-    } else {
-        validationMetricsSummary.textContent = "";
-    }
 
     trainedModelName.textContent = result.model_name || "Trained model";
     trainingStatus.textContent = "✓ Training complete. Review the validation and test metrics, then save to accept this model.";

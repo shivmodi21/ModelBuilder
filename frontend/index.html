@@ -548,18 +548,22 @@
 
                         <div
                             id="negative-class-container"
-                            class="target-class-summary hidden">
+                            class="form-group negative-class-group hidden">
 
-                            <span class="target-class-label">
+                            <label>
                                 Negative Class
-                            </span>
+                            </label>
 
-                            <span
+                            <div
                                 id="negative-class"
-                                class="target-class-value">
+                                class="negative-class-value">
                                 —
-                            </span>
+                            </div>
 
+                            <small class="form-help">
+                                Automatically determined from the positive class.
+                            </small>
+                            
                         </div>
 
                     </div>
@@ -627,73 +631,222 @@
 
                     </div>
 
+                    <!-- =========================================
+                        TEST PERFORMANCE
+                    ========================================== -->
 
-                    <div class="model-metrics">
+                    <div class="training-metric-section">
 
-                        <div class="metric-card">
-                            <span class="metric-label">Test Accuracy</span>
-                            <span
-                                id="metric-accuracy"
-                                class="metric-value"
-                            >
-                                —
-                            </span>
-                        </div>
+                        <h3 class="training-metric-section-title">
+                            Test Performance
+                        </h3>
 
-                        <div class="metric-card">
-                            <span class="metric-label">F1 Score</span>
-                            <span
-                                id="metric-f1"
-                                class="metric-value"
-                            >
-                                —
-                            </span>
-                        </div>
+                        <div class="training-metrics-grid">
 
-                        <div class="metric-card">
-                            <span class="metric-label">ROC-AUC</span>
-                            <span
-                                id="metric-roc-auc"
-                                class="metric-value"
-                            >
-                                —
-                            </span>
-                        </div>
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    Accuracy
+                                </span>
 
-                        <div class="metric-card">
-                            <span class="metric-label">Training Rows</span>
-                            <span
-                                id="metric-train-rows"
-                                class="metric-value"
-                            >
-                                —
-                            </span>
-                        </div>
+                                <span
+                                    id="metric-accuracy"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
 
-                        <div class="metric-card">
-                            <span class="metric-label">Test Precision</span>
-                            <span id="metric-precision" class="metric-value">—</span>
-                        </div>
 
-                        <div class="metric-card">
-                            <span class="metric-label">Test Recall</span>
-                            <span id="metric-recall" class="metric-value">—</span>
-                        </div>
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    Precision
+                                </span>
 
-                        <div class="metric-card">
-                            <span class="metric-label">Validation Rows</span>
-                            <span id="metric-validation-rows" class="metric-value">—</span>
-                        </div>
+                                <span
+                                    id="metric-precision"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
 
-                        <div class="metric-card">
-                            <span class="metric-label">Test Rows</span>
-                            <span id="metric-test-rows" class="metric-value">—</span>
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    Recall
+                                </span>
+
+                                <span
+                                    id="metric-recall"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    F1 Score
+                                </span>
+
+                                <span
+                                    id="metric-f1"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    ROC-AUC
+                                </span>
+
+                                <span
+                                    id="metric-roc-auc"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
                         </div>
 
                     </div>
 
-                    <p id="validation-metrics-summary" class="form-help"></p>
 
+                    <!-- =========================================
+                        VALIDATION PERFORMANCE
+                    ========================================== -->
+
+                    <div class="training-metric-section">
+
+                        <h3 class="training-metric-section-title">
+                            Validation Performance
+                        </h3>
+
+                        <div class="training-metrics-grid">
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    Accuracy
+                                </span>
+
+                                <span
+                                    id="validation-metric-accuracy"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    Precision
+                                </span>
+
+                                <span
+                                    id="validation-metric-precision"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    Recall
+                                </span>
+
+                                <span
+                                    id="validation-metric-recall"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    F1 Score
+                                </span>
+
+                                <span
+                                    id="validation-metric-f1"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    ROC-AUC
+                                </span>
+
+                                <span
+                                    id="validation-metric-roc-auc"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =========================================
+                        DATASET SPLIT
+                    ========================================== -->
+
+                    <div class="training-metric-section">
+
+                        <h3 class="training-metric-section-title">
+                            Dataset Split
+                        </h3>
+
+                        <div class="training-metrics-grid">
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    Training Rows
+                                </span>
+
+                                <span
+                                    id="metric-train-rows"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    Validation Rows
+                                </span>
+
+                                <span
+                                    id="metric-validation-rows"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="metric-card">
+                                <span class="metric-label">
+                                    Test Rows
+                                </span>
+
+                                <span
+                                    id="metric-test-rows"
+                                    class="metric-value">
+                                    —
+                                </span>
+                            </div>
+
+                        </div>
+
+                    </div>
+                    
 
                     <div class="save-model-section">
 

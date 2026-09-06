@@ -53,3 +53,6 @@ SUPPORTED_MODELS = [
     "knn",
     "svm",
 ]
+
+
+MAX_ITERATIONS = 100000

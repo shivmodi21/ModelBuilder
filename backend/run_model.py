@@ -28,7 +28,7 @@ from sklearn.metrics import (
 
 import joblib
 
-from .config import MODELS_DIR
+from .config import MODELS_DIR, MAX_ITERATIONS
 
 
 def coerce_numeric(values):
@@ -44,7 +44,7 @@ MODEL_FACTORIES = {
 
     "logistic_regression":
         LogisticRegression(
-            max_iter=1000
+            max_iter=MAX_ITERATIONS
         ),
 
     "decision_tree":
