@@ -1280,51 +1280,153 @@ select {
    FIELD VALIDATION
    ===================================================== */
 
-.validation-field-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.input-validation-table {
+    width: 100%;
+    table-layout: fixed;
 }
 
-.validation-field {
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
+/* Column widths */
+
+.input-validation-table th:nth-child(1),
+.input-validation-table td:nth-child(1) {
+    width: 20%;
 }
 
-.validation-field-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+.input-validation-table th:nth-child(2),
+.input-validation-table td:nth-child(2) {
+    width: 12%;
 }
 
-.validation-nature {
-    font-size: 0.75rem;
-    padding: 3px 8px;
-    border-radius: 999px;
+.input-validation-table th:nth-child(3),
+.input-validation-table td:nth-child(3) {
+    width: 17%;
+}
+
+.input-validation-table th:nth-child(4),
+.input-validation-table td:nth-child(4) {
+    width: 17%;
+}
+
+.input-validation-table th:nth-child(5),
+.input-validation-table td:nth-child(5) {
+    width: 19%;
+}
+
+.input-validation-table th:nth-child(6),
+.input-validation-table td:nth-child(6) {
+    width: 15%;
+}
+
+
+/* Header */
+
+.input-validation-table th {
+    padding: 11px 12px;
+
     background: var(--surface-hover);
-}
 
-.validation-checks {
-    display: grid;
-    grid-template-columns:
-        repeat(auto-fit, minmax(150px, 1fr));
-    gap: 7px;
-}
+    color: var(--text-secondary);
 
-.validation-check {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 8px;
-    font-size: 0.82rem;
-}
-
-.validation-pass {
-    color: var(--success);
+    font-size: 0.75rem;
     font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+
+    white-space: nowrap;
+}
+
+
+/* Cells */
+
+.input-validation-table td {
+    padding: 11px 12px;
+
+    font-size: 0.82rem;
+
+    vertical-align: middle;
+}
+
+
+/* Field name */
+
+.input-validation-table
+.validation-field-name {
+    color: var(--text);
+    font-weight: 600;
+
+    overflow-wrap: anywhere;
+}
+
+
+/* Nature badge */
+
+.input-validation-table
+.validation-nature {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 4px 9px;
+
+    border-radius: 999px;
+
+    background: var(--surface-hover);
+
+    color: var(--text-secondary);
+
+    font-size: 0.72rem;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+/* Checkmark cells */
+
+.validation-status-cell {
+    text-align: center !important;
+}
+
+
+/* Checkmark */
+
+.input-validation-table
+.validation-pass {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 24px;
+    height: 24px;
+
+    border-radius: 50%;
+
+    background: rgba(63, 185, 80, 0.12);
+
+    color: var(--success);
+
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+
+/* Row hover */
+
+.input-validation-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+@media (max-width: 900px) {
+
+    .validation-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .input-validation-table {
+        min-width: 760px;
+    }
+
 }
 
 

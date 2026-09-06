@@ -1401,32 +1401,21 @@ function createSelect(
 // APPLY NATURE DEFAULTS
 // =========================================================
 
-function applyNatureDefaults(
-    field
-) {
+function applyNatureDefaults(field) {
 
-    if (
-        field.nature ===
-        "Numerical"
-    ) {
-
-        field.missing_value_strategy =
-            "median";
-
+    if (field.nature === "Numerical") {
+        field.missing_value_strategy = "median";
         field.feature_engineering = {
             type: "none"
         };
-
         field.scaling = {
             type: "none"
         };
-
         field.encoding = {
             type: "none"
         };
 
         return;
-
     }
 
 
@@ -1434,8 +1423,7 @@ function applyNatureDefaults(
     // Categorical
     // ---------------------------------------------
 
-    field.missing_value_strategy =
-        "mode";
+    field.missing_value_strategy = "mode";
 
     field.feature_engineering = {
         type: "none"
@@ -1445,11 +1433,9 @@ function applyNatureDefaults(
         type: "label_encoding"
     };
 
-
     field.scaling = {
         type: "none"
     };
-
 }
 
 // =========================================================
@@ -1471,9 +1457,7 @@ function renderInputFields() {
         // NORMALIZE FIELD SETTINGS
         // -----------------------------------------
 
-        if (
-            !field.missing_value_strategy
-        ) {
+        if (!field.missing_value_strategy) {
 
             field.missing_value_strategy =
                 field.nature === "Categorical"
@@ -1483,9 +1467,7 @@ function renderInputFields() {
         }
 
 
-        if (
-            !field.feature_engineering
-        ) {
+        if (!field.feature_engineering) {
 
             field.feature_engineering = {
                 type: "none"
@@ -2283,17 +2265,9 @@ async function analyzeDataset(
         return;
     }
 
-
-    datasetAnalysisStatus.className =
-        "dataset-analysis-status loading";
-
-    datasetAnalysisStatus.classList.remove(
-        "hidden"
-    );
-
-    datasetAnalysisStatus.textContent =
-        "Analyzing CSV columns...";
-
+    datasetAnalysisStatus.className = "dataset-analysis-status loading";
+    datasetAnalysisStatus.classList.remove("hidden");
+    datasetAnalysisStatus.textContent = "Analyzing CSV columns...";
 
     const formData =
         new FormData();
@@ -2318,11 +2292,7 @@ async function analyzeDataset(
 
         const result = await response.json();
 
-        console.log(
-            "Dataset analysis response:",
-            result
-        );
-
+        console.log("Dataset analysis response:", result);
 
         if (!response.ok) {
 
@@ -2342,16 +2312,10 @@ async function analyzeDataset(
         // Populate fields
         // -----------------------------------------
 
-        populateFieldsFromAnalysis(
-            result.analysis
-        );
+        populateFieldsFromAnalysis(result.analysis);
 
-
-        datasetAnalysisStatus.className =
-            "dataset-analysis-status success";
-
-        datasetAnalysisStatus.textContent = `✓ Detected ${result.analysis.columns ?? 0} columns and ${result.analysis.rows ?? 0} rows.`;
-
+        datasetAnalysisStatus.className = "dataset-analysis-status success";
+        
         const analysis = result.analysis || {};
         const totalColumns = analysis.columns ?? 0;
         const totalRows = analysis.rows ?? 0;
@@ -2509,85 +2473,41 @@ function populateFieldsFromAnalysis(result) {
     result.columns_info.forEach(
         column => {
 
-            const nature =
-                column.suggested_nature ||
-                column.nature ||
-                "Numerical";
-
-
-            const field =
-                createDefaultField(
-                    column.name
-                );
-
-
-            field.nature =
-                nature;
-
-
-            applyNatureDefaults(
-                field
-            );
-
+            const nature = column.suggested_nature || column.nature || "Numerical";
+            const field = createDefaultField(column.name);
+            field.nature = nature;
+            applyNatureDefaults(field);
 
             // -------------------------------------
             // Preserve backend suggestions
             // -------------------------------------
 
-            if (
-                column.suggested_missing_value_strategy
-            ) {
-
-                field.missing_value_strategy =
-                    column
-                        .suggested_missing_value_strategy;
-
+            if (column.suggested_missing_value_strategy) {
+                field.missing_value_strategy = column.suggested_missing_value_strategy;
             }
 
-
-            if (
-                column.suggested_feature_engineering
-            ) {
-
+            if (column.suggested_feature_engineering) {
                 field.feature_engineering = {
-                    type:
-                        column
-                            .suggested_feature_engineering
+                    type: column.suggested_feature_engineering
                 };
-
             }
 
 
-            if (
-                column.suggested_scaling
-            ) {
-
+            if (column.suggested_scaling) {
                 field.scaling = {
-                    type:
-                        column
-                            .suggested_scaling
+                    type: column.suggested_scaling
                 };
-
             }
 
 
-            if (
-                column.suggested_encoding
-            ) {
-
+            if (column.suggested_encoding) {
                 field.encoding = {
-                    type:
-                        column
-                            .suggested_encoding
+                    type: column.suggested_encoding
                 };
-
             }
 
 
-            inputFields.push(
-                field
-            );
-
+            inputFields.push(field);
         }
     );
 
@@ -3381,7 +3301,6 @@ function displayValidationResult(result) {
         </div>
     `;
 
-
     // -----------------------------------------
     // Field validation
     // -----------------------------------------
@@ -3393,72 +3312,80 @@ function displayValidationResult(result) {
 
                 <h4>Input Field Validation</h4>
 
-                <div class="validation-field-list">
-        `;
+                <div class="validation-table-wrapper">
 
+                    <table class="validation-table input-validation-table">
+
+                        <thead>
+                            <tr>
+                                <th>Input Field</th>
+                                <th>Nature</th>
+                                <th>Numerical Values</th>
+                                <th>Missing Values</th>
+                                <th>Feature Engineering</th>
+                                <th>Scaling</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+        `;
 
         fieldValidation.forEach(
             field => {
 
                 reportHTML += `
-                    <div class="validation-field">
+                    <tr>
 
-                        <div class="validation-field-header">
+                        <td class="validation-field-name">
+                            ${escapeHTML(
+                                field.field || ""
+                            )}
+                        </td>
 
-                            <strong>
-                                ${escapeHTML(
-                                    field.field || ""
-                                )}
-                            </strong>
-
+                        <td>
                             <span class="validation-nature">
                                 ${escapeHTML(
                                     field.nature || ""
                                 )}
                             </span>
+                        </td>
 
-                        </div>
+                        <td class="validation-status-cell">
+                            <span class="validation-pass">
+                                ✓
+                            </span>
+                        </td>
 
-                        <div class="validation-checks">
+                        <td class="validation-status-cell">
+                            <span class="validation-pass">
+                                ✓
+                            </span>
+                        </td>
 
-                            <div class="validation-check">
-                                <span>Numerical values</span>
-                                <span class="validation-pass">
-                                    ✓
-                                </span>
-                            </div>
+                        <td class="validation-status-cell">
+                            <span class="validation-pass">
+                                ✓
+                            </span>
+                        </td>
 
-                            <div class="validation-check">
-                                <span>Missing values</span>
-                                <span class="validation-pass">
-                                    ✓
-                                </span>
-                            </div>
+                        <td class="validation-status-cell">
+                            <span class="validation-pass">
+                                ✓
+                            </span>
+                        </td>
 
-                            <div class="validation-check">
-                                <span>Feature engineering</span>
-                                <span class="validation-pass">
-                                    ✓
-                                </span>
-                            </div>
-
-                            <div class="validation-check">
-                                <span>Scaling</span>
-                                <span class="validation-pass">
-                                    ✓
-                                </span>
-                            </div>
-
-                        </div>
-
-                    </div>
+                    </tr>
                 `;
             }
         );
 
-
         reportHTML += `
+                        </tbody>
+
+                    </table>
+
                 </div>
+
             </div>
         `;
     }
