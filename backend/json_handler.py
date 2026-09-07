@@ -144,6 +144,7 @@ def create_metadata(
     input_fields: list,
     target_column: str,
     target_classes: list,
+    positive_class: str | None = None,
     metrics: dict | None = None,
     model_id: str | None = None
 ):
@@ -155,9 +156,7 @@ def create_metadata(
 
     model_id = model_id or create_model_id(model_name)
 
-    metadata_path = get_metadata_path(
-        model_id
-    )
+    metadata_path = get_metadata_path(model_id)
 
 
     # -----------------------------------------------------
@@ -199,7 +198,10 @@ def create_metadata(
                 target_column,
 
             "classes":
-                target_classes
+                target_classes,
+
+            "positive_class":
+                positive_class
         },
 
         "input_fields":

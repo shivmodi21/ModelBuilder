@@ -4333,9 +4333,11 @@ predictionForm.addEventListener(
 
             }
 
+            const positiveClass = selectedModel.target.positive_class;
 
             displayPredictionResult(
-                result
+                result, 
+                positiveClass
             );
 
 
@@ -4371,21 +4373,11 @@ predictionForm.addEventListener(
 // DISPLAY PREDICTION RESULT
 // =========================================================
 
-function displayPredictionResult(result) {
-
+function displayPredictionResult(result, positiveClass) {
     console.log("Prediction result:", result);
 
-    const prediction =
-        escapeHTML(
-            result.prediction
-        );
-
-    const resultClass =
-        isPositive
-            ? "positive"
-            : isNegative
-                ? "negative"
-                : "neutral";
+    const prediction = result.prediction;
+    const resultClass = String(prediction) === String(positiveClass)? "positive": "negative";
 
     let probabilityHTML = "";
 

@@ -9,7 +9,8 @@
         "classes": [
             "N",
             "Y"
-        ]
+        ],
+        "positive_class": "Y"
     },
     "input_fields": [
         {

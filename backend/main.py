@@ -31,6 +31,7 @@ from .json_handler import (
     list_metadata,
     get_metadata,
     delete_model,
+    create_model_id,
 )
 
 from .dataset_analysis import (
@@ -548,6 +549,7 @@ async def train_endpoint(
         "fields": enriched_fields,
         "target_column": target_column,
         "target_classes": training_result["target_classes"],
+        "positive_class": positive_class,
     }
 
 
@@ -586,21 +588,12 @@ async def save_model_endpoint(
         )
 
 
-    training = trained_models[
-        training_id
-    ]
-
+    training = trained_models[training_id]
 
     # -----------------------------------------------------
     # Create model ID
     # -----------------------------------------------------
-
-    from .json_handler import create_model_id
-
-    model_id = create_model_id(
-        training["model_name"]
-    )
-
+    model_id = create_model_id(training["model_name"])
 
     # -----------------------------------------------------
     # Save model
@@ -649,6 +642,9 @@ async def save_model_endpoint(
 
             target_classes=
                 training["target_classes"],
+
+            positive_class=
+                training["positive_class"],
 
             metrics=
                 training["metrics"],
