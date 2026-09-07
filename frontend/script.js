@@ -856,10 +856,9 @@ function createPredictionField(field) {
 // NUMERICAL FIELD
 // =========================================================
 
-function createNumericalField(
-    field,
-    fieldId
-) {
+function createNumericalField(field, fieldId) {
+
+    const transformation = field.feature_engineering?.type || "none";
 
     return `
         <div class="prediction-field">
@@ -886,10 +885,244 @@ function createNumericalField(
                 )}"
                 step="any"
                 required
+                data-transformation="${escapeHTML(
+                    transformation
+                )}"
             />
+
+            <span
+                class="prediction-field-error"
+                id="${fieldId}-error">
+            </span>
 
         </div>
     `;
+}
+
+// =========================================================
+// PREVENT MOUSE-WHEEL CHANGES ON NUMERICAL PREDICTION INPUTS
+// =========================================================
+
+predictionFields.addEventListener(
+    "wheel",
+    (event) => {
+
+        if (
+            document.activeElement &&
+            document.activeElement.type === "number"
+        ) {
+
+            event.preventDefault();
+
+        }
+
+    },
+    { passive: false }
+);
+
+// =========================================================
+// LIVE NUMERICAL TRANSFORMATION VALIDATION
+// =========================================================
+
+predictionFields.addEventListener(
+    "input",
+    (event) => {
+
+        if (
+            event.target.type !== "number"
+        ) {
+            return;
+        }
+
+
+        const input =
+            event.target;
+
+        const field =
+            selectedModel?.input_fields?.find(
+                item =>
+                    item.name === input.name
+            );
+
+
+        if (!field) {
+            return;
+        }
+
+
+        const errorElement =
+            document.getElementById(
+                `${input.id}-error`
+            );
+
+
+        if (!errorElement) {
+            return;
+        }
+
+
+        const value =
+            input.value.trim();
+
+
+        // Empty values are handled by
+        // the required-field validation.
+
+        if (value === "") {
+
+            errorElement.textContent =
+                "";
+
+            input.classList.remove(
+                "input-invalid"
+            );
+
+            return;
+        }
+
+
+        const numericValue =
+            Number(value);
+
+
+        const error =
+            validateNumericalTransformation(
+                field,
+                numericValue
+            );
+
+
+        if (error) {
+
+            errorElement.textContent =
+                error;
+
+            input.classList.add(
+                "input-invalid"
+            );
+
+        } else {
+
+            errorElement.textContent =
+                "";
+
+            input.classList.remove(
+                "input-invalid"
+            );
+
+        }
+
+    }
+);
+
+
+// =========================================================
+// VALIDATE NUMERICAL TRANSFORMATION
+// =========================================================
+
+function validateNumericalTransformation(
+    field,
+    value
+) {
+
+    const transformation =
+        field.feature_engineering?.type || "none";
+
+    const fieldName =
+        field.name;
+
+    if (!Number.isFinite(value)) {
+
+        return `${fieldName} must be a valid number.`;
+
+    }
+
+
+    // ---------------------------------------------
+    // No transformation
+    // ---------------------------------------------
+
+    if (transformation === "none") {
+
+        return null;
+
+    }
+
+
+    // ---------------------------------------------
+    // Log
+    // ---------------------------------------------
+
+    if (transformation === "log") {
+
+        if (value <= 0) {
+
+            return (
+                `${fieldName} must be greater than 0 ` +
+                `because Log transformation is applied.`
+            );
+
+        }
+
+        return null;
+
+    }
+
+
+    // ---------------------------------------------
+    // Log1p
+    // ---------------------------------------------
+
+    if (transformation === "log1p") {
+
+        if (value < 0) {
+
+            return (
+                `${fieldName} must be greater than ` +
+                `or equal to 0 because Log1p ` +
+                `transformation is applied.`
+            );
+
+        }
+
+        return null;
+
+    }
+
+
+    // ---------------------------------------------
+    // Square Root
+    // ---------------------------------------------
+
+    if (transformation === "sqrt") {
+
+        if (value < 0) {
+
+            return (
+                `${fieldName} must be greater than ` +
+                `or equal to 0 because Square Root ` +
+                `transformation is applied.`
+            );
+
+        }
+
+        return null;
+
+    }
+
+
+    // ---------------------------------------------
+    // Square
+    // ---------------------------------------------
+
+    if (transformation === "square") {
+
+        return null;
+
+    }
+
+
+    return null;
 }
 
 // =========================================================
@@ -2350,9 +2583,7 @@ function validateModelChoice() {
 // ANALYZE DATASET
 // =========================================================
 
-async function analyzeDataset(
-    file
-) {
+async function analyzeDataset(file) {
 
     if (!datasetAnalysisStatus) {
         return;
@@ -2360,16 +2591,11 @@ async function analyzeDataset(
 
     datasetAnalysisStatus.className = "dataset-analysis-status loading";
     datasetAnalysisStatus.classList.remove("hidden");
-    datasetAnalysisStatus.textContent = "Analyzing CSV columns...";
+    datasetAnalysisStatus.textContent = "Analyzing dataset...";
 
-    const formData =
-        new FormData();
+    const formData = new FormData();
 
-    formData.append(
-        "csv_file",
-        file
-    );
-
+    formData.append("csv_file", file);
 
     try {
 
@@ -4162,14 +4388,12 @@ predictionForm.addEventListener(
 
         event.preventDefault();
 
-
         if (!selectedModel) {
             return;
         }
 
 
-        const formData =
-            new FormData();
+        const formData = new FormData();
 
 
         // ---------------------------------------------
@@ -4234,8 +4458,26 @@ predictionForm.addEventListener(
                     return;
                 }
 
-                userData[field.name] =
-                    numericValue;
+                // Transformation-specific validation
+
+                const transformationError =
+                    validateNumericalTransformation(
+                        field,
+                        numericValue
+                    );
+
+
+                if (transformationError) {
+
+                    validationErrors.push(
+                        transformationError
+                    );
+
+                    return;
+
+                }
+
+                userData[field.name] = numericValue;
 
                 return;
             }
@@ -4271,7 +4513,7 @@ predictionForm.addEventListener(
         if (validationErrors.length > 0) {
 
             displayPredictionError(
-                validationErrors.join("<br>")
+                validationErrors
             );
 
             return;
@@ -4347,16 +4589,10 @@ predictionForm.addEventListener(
 
         } catch (error) {
 
-            console.error(
-                "Prediction error:",
-                error
-            );
+            console.error("Prediction error:", error);
 
-
-            displayPredictionError(
-                error.message
-            );
-
+            const messages = [error.message];
+            displayPredictionError(messages);
 
         } finally {
 
@@ -4475,7 +4711,7 @@ function displayPredictionResult(result, positiveClass) {
 // =========================================================
 
 function displayPredictionError(
-    message
+    messages
 ) {
 
     predictionResult.innerHTML = `
@@ -4485,9 +4721,13 @@ function displayPredictionError(
             <i class="fa-solid fa-circle-exclamation"></i>
 
             <span>
-                ${escapeHTML(
-                    message
-                )}
+                ${messages
+                    .map(
+                        message =>
+                            escapeHTML(message)
+                    )
+                    .join("<br>")
+                }
             </span>
 
         </div>
