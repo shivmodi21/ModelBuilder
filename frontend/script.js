@@ -2971,6 +2971,11 @@ validateDatasetButton.addEventListener(
         trainingStatus.style.color = "var(--text-secondary)";
         validateDatasetButton.disabled = true;
 
+        validateDatasetButton.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Validating...
+        `;
+
         try {
 
             // -----------------------------------------
@@ -3036,6 +3041,10 @@ validateDatasetButton.addEventListener(
             trainingStatus.style.color = "var(--error)";
         } finally {
             validateDatasetButton.disabled = false;
+            validateDatasetButton.innerHTML = `
+                <i class="fa-solid fa-check"></i>
+                Validate Dataset
+            `;
         }
 
     }
@@ -3851,6 +3860,11 @@ trainModelButton.addEventListener(
         trainModelButton.disabled = true;
         validateDatasetButton.disabled = true;
 
+        trainModelButton.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Training...
+        `;
+
         trainingStatus.textContent = "Training model...";
         trainingStatus.style.color = "var(--text-secondary)";
 
@@ -3907,6 +3921,13 @@ trainModelButton.addEventListener(
 
         } finally {
             validateDatasetButton.disabled = false;
+            trainModelButton.disabled = false;
+
+            trainModelButton.innerHTML = `
+                <i class="fa-solid fa-rocket"></i>
+                Train Model
+            `;
+
             validateConfiguration();
         }
 
@@ -4037,14 +4058,15 @@ saveModelButton.addEventListener(
         // Loading state
         // ---------------------------------------------
 
-        saveModelButton.disabled =
-            true;
+        saveModelButton.disabled = true;
 
-        saveModelStatus.textContent =
-            "Saving model...";
+        saveModelButton.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Saving...
+        `;
 
-        saveModelStatus.className =
-            "validation-message";
+        saveModelStatus.textContent = "Saving model...";
+        saveModelStatus.className = "validation-message";
 
 
         try {
@@ -4059,8 +4081,7 @@ saveModelButton.addEventListener(
                 );
 
 
-            const result =
-                await response.json();
+            const result = await response.json();
 
 
             // -----------------------------------------
@@ -4088,18 +4109,10 @@ saveModelButton.addEventListener(
             // Success
             // -----------------------------------------
 
-            saveModelStatus.textContent =
-                "✓ Model saved successfully.";
-
-            saveModelStatus.className =
-                "validation-message success";
-
-
-            trainingStatus.textContent =
-                "✓ Model has been saved and is now available in the Models tab.";
-
-            trainingStatus.style.color =
-                "var(--success)";
+            saveModelStatus.textContent = "✓ Model saved successfully.";
+            saveModelStatus.className = "validation-message success";
+            trainingStatus.textContent = "✓ Model has been saved and is now available in the Models tab.";
+            trainingStatus.style.color = "var(--success)";
 
             // Refresh Tab 1 immediately so the accepted model can be selected
             // for prediction without reloading the page.
@@ -4110,36 +4123,28 @@ saveModelButton.addEventListener(
             // Model is no longer temporary
             // -----------------------------------------
 
-            currentTrainingId =
-                null;
+            currentTrainingId = null;
+            saveModelButton.disabled = true;
 
-
-            saveModelButton.disabled =
-                true;
-
+            saveModelButton.innerHTML = `
+                <i class="fa-solid fa-floppy-disk"></i>
+                Save Model
+            `;
 
         } catch (error) {
-
-            console.error(
-                "Save model error:",
-                error
-            );
-
-
-            saveModelStatus.textContent =
-                "Unable to connect to the backend.";
-
-            saveModelStatus.className =
-                "validation-message error";
-
+            console.error("Save model error:", error);
+            saveModelStatus.textContent = "Unable to connect to the backend.";
+            saveModelStatus.className = "validation-message error";
 
         } finally {
 
             if (currentTrainingId) {
+                saveModelButton.disabled = false;
 
-                saveModelButton.disabled =
-                    false;
-
+                saveModelButton.innerHTML = `
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    Save Model
+                `;
             }
 
         }
@@ -4302,7 +4307,6 @@ predictionForm.addEventListener(
         predictionResult.classList.add(
             "hidden"
         );
-
 
         try {
 
