@@ -1724,18 +1724,111 @@ function renderInputFields() {
             }
         );
 
+        // ---------------------------------------------
+        // CREATE RESPONSIVE FIELD GROUPS
+        // ---------------------------------------------
+
+        const nameGroup =
+            document.createElement("div");
+
+        nameGroup.className =
+            "input-field-group";
+
+        const nameLabel =
+            document.createElement("label");
+
+        nameLabel.textContent =
+            "Field Name";
+
+        nameGroup.appendChild(nameLabel);
+        nameGroup.appendChild(nameInput);
+
+
+        const natureGroup =
+            document.createElement("div");
+
+        natureGroup.className =
+            "input-field-group";
+
+        const natureLabel =
+            document.createElement("label");
+
+        natureLabel.textContent =
+            "Nature";
+
+        natureGroup.appendChild(natureLabel);
+        natureGroup.appendChild(natureSelect);
+
+
+        const missingGroup =
+            document.createElement("div");
+
+        missingGroup.className =
+            "input-field-group";
+
+        const missingLabel =
+            document.createElement("label");
+
+        missingLabel.textContent =
+            "Missing Value Handling";
+
+        missingGroup.appendChild(missingLabel);
+        missingGroup.appendChild(missingSelect);
+
+
+        const featureEngineeringGroup =
+            document.createElement("div");
+
+        featureEngineeringGroup.className =
+            "input-field-group";
+
+        const featureEngineeringLabel =
+            document.createElement("label");
+
+        featureEngineeringLabel.textContent =
+            "Feature Engineering";
+
+        featureEngineeringGroup.appendChild(
+            featureEngineeringLabel
+        );
+
+        featureEngineeringGroup.appendChild(
+            featureEngineeringSelect
+        );
+
+
+        const scalingEncodingGroup =
+            document.createElement("div");
+
+        scalingEncodingGroup.className =
+            "input-field-group";
+
+        const scalingEncodingLabel =
+            document.createElement("label");
+
+        scalingEncodingLabel.textContent =
+            "Scaling / Encoding";
+
+        scalingEncodingGroup.appendChild(
+            scalingEncodingLabel
+        );
+
+        scalingEncodingGroup.appendChild(
+            scalingEncodingSelect
+        );
+
 
         // ---------------------------------------------
         // ADD TO ROW
         // ---------------------------------------------
 
-        row.appendChild(nameInput);
-        row.appendChild(natureSelect);
-        row.appendChild(missingSelect);
-        row.appendChild(featureEngineeringSelect);
-        row.appendChild(scalingEncodingSelect);
+        row.appendChild(nameGroup);
+        row.appendChild(natureGroup);
+        row.appendChild(missingGroup);
+        row.appendChild(featureEngineeringGroup);
+        row.appendChild(scalingEncodingGroup);
         row.appendChild(removeButton);
-        
+
         inputFieldsContainer.appendChild(row);
     });
 
@@ -4066,9 +4159,7 @@ predictionForm.addEventListener(
 
 
         if (!selectedModel) {
-
             return;
-
         }
 
 
@@ -4282,10 +4373,19 @@ predictionForm.addEventListener(
 
 function displayPredictionResult(result) {
 
+    console.log("Prediction result:", result);
+
     const prediction =
         escapeHTML(
             result.prediction
         );
+
+    const resultClass =
+        isPositive
+            ? "positive"
+            : isNegative
+                ? "negative"
+                : "neutral";
 
     let probabilityHTML = "";
 
@@ -4349,19 +4449,13 @@ function displayPredictionResult(result) {
                 <i class="fa-solid fa-circle-check"></i>
             </div>
 
-            <div>
+            <span class="prediction-result-label">
+                Model Prediction: 
+            </span>
 
-                <span class="prediction-result-label">
-                    ${escapeHTML(
-                        result.model_name
-                    )}
-                </span>
-
-                <h3>
-                    ${prediction}
-                </h3>
-
-            </div>
+            <span class="prediction-output-chip ${resultClass}">
+                ${escapeHTML(prediction)}
+            </span>
 
         </div>
 

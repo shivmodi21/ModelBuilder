@@ -567,6 +567,9 @@ body {
         grid-template-columns: 1fr 1fr;
     }
 
+    .validation-target {
+        grid-template-columns: 1fr;
+    }
 }
 
 
@@ -771,6 +774,7 @@ select {
 
 .input-field-row {
     display: grid;
+
     grid-template-columns:
         minmax(170px, 1.7fr)
         minmax(125px, 0.9fr)
@@ -791,6 +795,29 @@ select {
     border-radius: 8px;
 
     animation: fieldAppear 0.2s ease;
+}
+
+/* =========================================================
+   INPUT FIELD GROUPS
+========================================================= */
+
+.input-field-group {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-field-group label {
+    display: none;
+
+    color: var(--text-muted);
+
+    font-size: 0.72rem;
+    font-weight: 600;
+
+    text-transform: uppercase;
+    letter-spacing: 0.35px;
 }
 
 .input-field-row input,
@@ -1128,15 +1155,6 @@ select {
 
 }
 
-@media (max-width: 600px) {
-
-    .dataset-analysis-grid {
-        grid-template-columns:
-            1fr 1fr;
-    }
-
-}
-
 @media (max-width: 430px) {
 
     .dataset-analysis-grid {
@@ -1271,8 +1289,43 @@ select {
 
 .validation-target {
     display: grid;
-    gap: 7px;
-    font-size: 0.9rem;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 12px;
+
+    font-size: 0.85rem;
+}
+
+.validation-target > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    min-width: 0;
+
+    padding: 10px 12px;
+
+    background: #0d1117;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.validation-target strong {
+    color: var(--text-muted);
+
+    font-size: 0.75rem;
+    font-weight: 600;
+
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.validation-target > div {
+    color: var(--text);
+    font-weight: 600;
 }
 
 
@@ -1827,6 +1880,11 @@ select {
         grid-template-columns: repeat(2, 1fr);
     }
 
+    .validation-target {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
 }
 
 
@@ -1865,53 +1923,53 @@ select {
         padding: 19px;
     }
 
+    /* =========================================================
+    RESPONSIVE — INPUT FIELDS
+    ========================================================= */
+
     .input-fields-header {
         display: none;
     }
 
     .input-field-row {
         display: grid;
+
         grid-template-columns:
-            1fr 42px;
-        gap: 8px;
-        padding: 9px;
+            minmax(0, 1fr)
+            42px;
+
+        gap: 12px;
+
+        padding: 12px;
     }
 
-    .input-field-row input {
+    .input-field-group {
         grid-column: 1;
-        grid-row: 1;
+
+        display: flex;
+        flex-direction: column;
+
+        gap: 6px;
     }
 
-    .input-field-row
-    .nature-select{
-        grid-column: 1;
-        grid-row: 2;
+    .input-field-group label {
+        display: block;
     }
 
-    .input-field-row
-    .missing-value-select {
-        grid-column: 1;
-        grid-row: 3;
+    .input-field-group input,
+    .input-field-group select {
+        width: 100%;
     }
 
-
-    .input-field-row
-    .feature-engineering-select {
-        grid-column: 1;
-        grid-row: 4;
-    }
-
-
-    .input-field-row
-    .scaling-encoding-select {
-        grid-column: 1;
-        grid-row: 5;
-    }
-
-    .input-field-row
     .remove-field-button {
         grid-column: 2;
-        grid-row: 1 / 6;
+
+        grid-row: 1 / -1;
+
+        align-self: start;
+
+        width: 36px;
+        height: 36px;
     }
 
     .target-selection{
@@ -1941,6 +1999,24 @@ select {
 
     .training-metrics-grid {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .dataset-analysis-grid {
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+    .prediction-result {
+        padding: 18px;
+    }
+
+    .probability-row {
+        grid-template-columns:
+            50px
+            minmax(0, 1fr)
+            65px;
+
+        gap: 10px;
     }
 
 }
@@ -1990,6 +2066,21 @@ select {
     .training-metrics-grid {
         grid-template-columns: 1fr;
     }
+
+    .probability-row {
+        grid-template-columns:
+            45px
+            minmax(0, 1fr)
+            62px;
+
+        gap: 8px;
+    }
+
+    .probability-row > span,
+    .probability-value strong {
+        font-size: 0.82rem;
+    }
+
 
 }
 
@@ -2084,83 +2175,189 @@ select {
    ===================================================== */
 
 .prediction-result {
-    margin-top: 2rem;
-    padding: 1.5rem;
-    background: var(--bg);
+    margin-top: 28px;
+    padding: 24px;
+    background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
+    text-align: left;
 }
 
+
+/* ---------------------------------------------
+   Prediction summary
+--------------------------------------------- */
 
 .prediction-success {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 14px;
+
+    min-height: 44px;
 }
 
 
 .prediction-result-icon {
-    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(88, 166, 255, 0.12);
     color: var(--primary);
+    font-size: 1.1rem;
 }
 
 
 .prediction-result-label {
-    display: block;
+    color: var(--text);
+
+    font-size: 0.95rem;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+/* Output chip */
+
+.prediction-output-chip {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-width: 42px;
+    min-height: 30px;
+
+    padding: 5px 14px;
+
+    border-radius: 999px;
+
+    font-size: 0.9rem;
+    font-weight: 700;
+
+    line-height: 1;
+}
+
+
+/* Positive */
+
+.prediction-output-chip.positive {
+    background: rgba(63, 185, 80, 0.15);
+
+    border: 1px solid rgba(63, 185, 80, 0.35);
+
+    color: var(--success);
+}
+
+
+/* Negative */
+
+.prediction-output-chip.negative {
+    background: rgba(248, 81, 73, 0.15);
+
+    border: 1px solid rgba(248, 81, 73, 0.35);
+
+    color: var(--error);
+}
+
+
+/* Unknown / fallback */
+
+.prediction-output-chip.neutral {
+    background: var(--surface-hover);
+
+    border: 1px solid var(--border);
+
     color: var(--text-secondary);
-    font-size: 0.85rem;
 }
 
-
-.prediction-success h3 {
-    margin: 0.25rem 0 0;
-    font-size: 1.6rem;
-}
-
+/* ---------------------------------------------
+   Class probabilities
+--------------------------------------------- */
 
 .prediction-probabilities {
-    margin-top: 1.5rem;
-    padding-top: 1.25rem;
+    margin-top: 22px;
+    padding-top: 20px;
     border-top: 1px solid var(--border);
 }
 
 
 .prediction-probabilities h4 {
-    margin: 0 0 1rem;
+    margin: 0 0 16px;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 700;
 }
 
+
+/* ---------------------------------------------
+   Probability row
+--------------------------------------------- */
 
 .probability-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.65rem 0;
+    display: grid;
+    grid-template-columns:
+        70px
+        minmax(0, 1fr)
+        75px;
+
+    align-items: center;
+    gap: 14px;
+    padding: 9px 0;
 }
 
+
+.probability-row > span {
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+
+/* ---------------------------------------------
+   Bar + percentage
+--------------------------------------------- */
+
+.probability-value {
+    display: contents;
+}
+
+
+.probability-bar {
+    width: 100%;
+    height: 7px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+
+.probability-bar span {
+    display: block;
+    height: 100%;
+    background: var(--primary);
+    border-radius: inherit;
+}
+
+
+.probability-value strong {
+    text-align: right;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+
+/* ---------------------------------------------
+   Prediction error
+--------------------------------------------- */
 
 .prediction-error {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     color: var(--text-secondary);
-}
-
-.probability-value {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    min-width: 180px;
-}
-
-.probability-bar {
-    flex: 1;
-    height: 6px;
-    background: var(--border);
-    border-radius: 999px;
-    overflow: hidden;
-}
-
-.probability-bar span {
-    display: block;
-    height: 100%;
-    background: var(--primary);
 }
