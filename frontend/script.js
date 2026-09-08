@@ -1378,6 +1378,7 @@ async function handleCSVSelection() {
     if (!file.name.toLowerCase().endsWith(".csv")) {
         datasetError.textContent = "❌ Please select a CSV file.";
         trainingCSVInput.value = "";
+        validateConfiguration();
         return;
     }
 
@@ -1415,6 +1416,9 @@ function handleTargetColumnChange() {
     const candidate = targetCandidates.find(item => item.name === targetName);
 
     if (!candidate) {
+        resetTargetClassSelection();
+        resetDatasetValidation();
+        validateConfiguration();
         return;
     }
 
@@ -2514,14 +2518,12 @@ trainModelButton.addEventListener("click", async () => {
 
         } finally {
             validateDatasetButton.disabled = false;
-            trainModelButton.disabled = false;
+            validateConfiguration();
 
             trainModelButton.innerHTML = `
                 <i class="fa-solid fa-rocket"></i>
                 Train Model
             `;
-
-            validateConfiguration();
         }
 
     }

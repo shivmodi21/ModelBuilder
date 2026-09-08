@@ -375,7 +375,7 @@ async def validate_training_dataset(
 
 @app.post("/api/train")
 async def train_endpoint(
-    file: UploadFile = File(...),
+    csv_file: UploadFile = File(...),
     fields: str = Form(...),
     target_column: str = Form(...),
     positive_class: str = Form(...),
@@ -387,12 +387,12 @@ async def train_endpoint(
     # 1. Validate CSV file
     # -----------------------------------------------------
 
-    if not file or not file.filename:
+    if not csv_file or not csv_file.filename:
         raise HTTPException(
             status_code=400,
             detail="CSV file not found"
         )
-    elif not file.filename.lower().endswith(".csv"):
+    elif not csv_file.filename.lower().endswith(".csv"):
 
         raise HTTPException(
             status_code=400,
@@ -406,7 +406,7 @@ async def train_endpoint(
 
     try:
 
-        contents = await file.read()
+        contents = await csv_file.read()
 
         from io import BytesIO
 

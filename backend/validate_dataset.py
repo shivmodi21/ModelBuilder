@@ -1885,16 +1885,12 @@ def validate_dataset(
         if nature == "Categorical":
 
             if "encoding" not in field_copy:
-
                 field_copy["encoding"] = {
-                    "type":
-                        "one_hot_encoding"
+                    "type": "label_encoding"
                 }
 
 
-        enriched_fields.append(
-            field_copy
-        )
+        enriched_fields.append(field_copy)
     
     # -----------------------------------------------------
     # Final validation information
@@ -1934,7 +1930,7 @@ def validate_dataset(
         "categorical_options": categorical_options,
         "validation": {
             "fields": field_validation,
-            "one_hot_encoding":  one_hot_result
+            "one_hot_encoding": one_hot_result
         }
     }
 
