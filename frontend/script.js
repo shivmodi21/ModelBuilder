@@ -1056,7 +1056,7 @@ function renderInputFields() {
         const removeButton = document.createElement("button");
         removeButton.type = "button";
         removeButton.className = "remove-field-button";
-        removeButton.textContent = "×";
+        removeButton.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i>';
         removeButton.title = "Remove this input field";
         removeButton.addEventListener("click", () => {
                 removeInputField(field.id);
