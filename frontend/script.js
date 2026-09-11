@@ -2468,7 +2468,7 @@ trainModelButton.addEventListener("click", async () => {
         formData.append("target_column", targetColumnInput.value.trim());
         formData.append("positive_class", selectedPositiveClass);
         formData.append("model_choice", modelChoiceInput.value);
-        formData.append("file", file);
+        formData.append("csv_file", file);
 
         // UI loading state
         trainModelButton.disabled = true;
