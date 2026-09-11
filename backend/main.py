@@ -11,6 +11,8 @@ from fastapi import (
 )
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from .config import (
     API_TITLE,
@@ -82,13 +84,13 @@ app.add_middleware(
 # ROOT
 # =========================================================
 
-@app.get("/")
-def root():
+# @app.get("/")
+# def root():
 
-    return {
-        "message":
-            "ML Model Builder API is running."
-    }
+#     return {
+#         "message":
+#             "ML Model Builder API is running."
+#     }
 
 
 # =========================================================
@@ -878,3 +880,20 @@ async def predict_endpoint(
                 "probabilities"
             ),
     }
+
+
+# ---------------------------------------------------------
+# Serve frontend
+# ---------------------------------------------------------
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = BASE_DIR / "frontend"
+
+app.mount(
+    "/",
+    StaticFiles(
+        directory=FRONTEND_DIR,
+        html=True
+    ),
+    name="frontend"
+)

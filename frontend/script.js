@@ -170,7 +170,7 @@ async function loadModels() {
     `;
 
     try {
-        const response = await fetch("http://127.0.0.1:8000/api/models");
+        const response = await fetch("/api/models");
         const result = await response.json();
 
         if (!response.ok) {
@@ -485,7 +485,7 @@ function attachModelCardEvents() {
 // OPEN MODEL
 async function openModel(modelId) {
     try {
-        const response = await fetch(`http://127.0.0.1:8000/api/models/${encodeURIComponent(modelId)}`);
+        const response = await fetch(`/api/models/${encodeURIComponent(modelId)}`);
         const model = await response.json();
 
         if (!response.ok) {
@@ -509,9 +509,10 @@ async function deleteModel(modelId) {
     }
 
     try {
-        const response = await fetch(
-                `http://127.0.0.1:8000/api/models/${encodeURIComponent(modelId)}`,
-                {method: "DELETE"}
+        const response = await fetch(`/api/models/${encodeURIComponent(modelId)}`,
+                {
+                    method: "DELETE"
+                }
             );
 
         const result = await response.json();
@@ -1144,7 +1145,7 @@ async function analyzeDataset(file) {
     formData.append("csv_file", file);
 
     try {
-        const response = await fetch("http://127.0.0.1:8000/api/analyze-dataset",
+        const response = await fetch("/api/analyze-dataset",
                 {
                     method: "POST",
                     body: formData
@@ -2398,7 +2399,7 @@ validateDatasetButton.addEventListener("click", async () => {
         try {
 
             // Send request
-            const response = await fetch("http://127.0.0.1:8000/api/validate-dataset",
+            const response = await fetch("/api/validate-dataset",
                     {
                         method: "POST",
                         body: formData
@@ -2490,7 +2491,7 @@ trainModelButton.addEventListener("click", async () => {
 
         try {
             // Send training request
-            const response = await fetch("http://127.0.0.1:8000/api/train",
+            const response = await fetch("/api/train",
                     {
                         method: "POST",
                         body: formData
@@ -2554,7 +2555,7 @@ saveModelButton.addEventListener("click", async () => {
         saveModelStatus.className = "validation-message";
 
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/save-model",
+            const response = await fetch("/api/save-model",
                     {
                         method: "POST",
                         body: formData
@@ -2759,7 +2760,7 @@ predictionForm.addEventListener("submit", async (event) => {
         predictionResult.classList.add("hidden");
 
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/predict",
+            const response = await fetch("/api/predict",
                     {
                         method: "POST",
                         body: formData
