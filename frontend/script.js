@@ -2510,7 +2510,7 @@ trainModelButton.addEventListener("click", async () => {
             Training...
         `;
 
-        trainingStatus.textContent = "Training model...";
+        trainingStatus.textContent = "Training model... (It will take time on hosted platform)";
         trainingStatus.style.color = "var(--text-secondary)";
 
         // Hide old result
