@@ -8,6 +8,14 @@ The project combines a vanilla HTML/CSS/JavaScript frontend with a Python/FastAP
 
 ---
 
+# 🚀 Try it here ...
+
+https://modelbuilder.onrender.com/
+
+Hosted on Render (For Demo)
+
+---
+
 ## ✨ What This Project Demonstrates
 
 This project is designed to demonstrate how a machine learning model can be taken beyond a notebook and turned into an **interactive application**.
@@ -525,14 +533,6 @@ The application configuration explicitly defines binary classification as the ta
 
 * Pickle/joblib model files
 * JSON model metadata
-
----
-
-# 🚀 Try it here ...
-
-https://modelbuilder.onrender.com/
-
-Hosted on Render (For Demo)
 
 ---
 
