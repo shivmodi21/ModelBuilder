@@ -528,78 +528,11 @@ The application configuration explicitly defines binary classification as the ta
 
 ---
 
-# 🚀 Running Locally
+# 🚀 Try it here ...
 
-## 1. Clone the repository
+https://modelbuilder.onrender.com/
 
-```bash
-git clone <your-repository-url>
-cd LoanApproval
-```
-
-## 2. Create a Python virtual environment
-
-Windows:
-
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-macOS/Linux:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-## 3. Install dependencies
-
-If a `requirements.txt` file is included:
-
-```bash
-pip install -r requirements.txt
-```
-
-Otherwise, install the core dependencies:
-
-```bash
-pip install fastapi uvicorn pandas numpy scikit-learn joblib python-multipart
-```
-
-## 4. Start the backend
-
-From the project root, run the FastAPI application using Uvicorn.
-
-For a package structure where `backend` is the Python package:
-
-```bash
-uvicorn backend.main:app --reload
-```
-
-The API will be available at:
-
-```text
-http://127.0.0.1:8000
-```
-
-## 5. Open the frontend
-
-Open:
-
-```text
-frontend/index.html
-```
-
-in a browser.
-
-The current frontend communicates with the backend through:
-
-```text
-http://127.0.0.1:8000
-```
-
-The frontend JavaScript handles API calls for dataset analysis, training, model management, and prediction.
+Hosted on Render (For Demo)
 
 ---
 
