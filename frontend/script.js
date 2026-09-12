@@ -788,7 +788,7 @@ function displayPredictionResult(result, positiveClass) {
     });
 }
 
-function displayPredictionError(messages) {
+function displayPredictionValidationError(messages) {
 
     predictionResult.innerHTML = `
         <div class="prediction-error">
@@ -801,6 +801,27 @@ function displayPredictionError(messages) {
         </div>
     `;
 
+    predictionResult.classList.remove("hidden");
+}
+
+function displayPredictionError(result) {
+    let message = "Prediction failed.";
+
+    if (typeof result.detail === "string") {
+        message = result.detail;
+    }
+
+    else if (result.detail && typeof result.detail === "object") {
+        if (result.detail.error) {
+            message = result.detail.error;
+        }
+
+        else if (result.detail.message) {
+            message = result.detail.message;
+        }
+    }
+
+    predictionResult.textContent = `❌ ${message}`;
     predictionResult.classList.remove("hidden");
 }
 
@@ -1601,7 +1622,7 @@ function validateConfiguration() {
     return configurationValid;
 }
 
-function displayBackendError(result) {
+function displayValidationError(result) {
     let messageHTML = `<strong>⚠️ Dataset Invalid! Fix the issues below:</strong>`;
     const detail = result?.detail;
 
@@ -2239,6 +2260,27 @@ function displayTrainingError(result) {
     trainingStatus.style.color = "var(--error)";
 }
 
+function displaySavingError(result) {
+    let message = "Model Saving failed.";
+
+    if (typeof result.detail === "string") {
+        message = result.detail;
+    }
+
+    else if (result.detail && typeof result.detail === "object") {
+        if (result.detail.error) {
+            message = result.detail.error;
+        }
+
+        else if (result.detail.message) {
+            message = result.detail.message;
+        }
+    }
+
+    saveModelStatus.textContent = `❌ ${message}`;
+    saveModelStatus.className = "validation-message error";
+}
+
 // =========================================================
 // HELPERS
 // =========================================================
@@ -2405,24 +2447,12 @@ validateDatasetButton.addEventListener("click", async () => {
                         body: formData
                     }
                 );
-            console.log("Validate Dataset response status:", response.status);
-
-            const responseText = await response.text();
-            console.log("Validate Dataset raw response:", responseText);
-
-            let result;
-
-            try {
-                result = JSON.parse(responseText);
-            } catch (error) {
-                throw new Error("Backend returned an invalid JSON response.");
-            }
-
-            console.log("Validate Dataset parsed response:", result);
+            
+            const result = await response.json();
 
             // Handle error
             if (!response.ok) {
-                displayBackendError(result);
+                displayValidationError(result);
                 return;
             }
 
@@ -2514,7 +2544,7 @@ trainModelButton.addEventListener("click", async () => {
 
         } catch (error) {
             console.error("Training error:", error);
-            trainingStatus.textContent = "Unable to connect to the backend.";
+            trainingStatus.textContent = `❌ ${error.message}`;
             trainingStatus.style.color = "var(--error)";
 
         } finally {
@@ -2566,8 +2596,7 @@ saveModelButton.addEventListener("click", async () => {
 
             // Backend error
             if (!response.ok) {
-                saveModelStatus.textContent = "❌ " + (result.detail || "Unable to save model.");
-                saveModelStatus.className = "validation-message error";
+                displaySavingError(result);
                 return;
             }
 
@@ -2592,7 +2621,7 @@ saveModelButton.addEventListener("click", async () => {
 
         } catch (error) {
             console.error("Save model error:", error);
-            saveModelStatus.textContent = "Unable to connect to the backend.";
+            saveModelStatus.textContent = `❌ ${error.message}`;
             saveModelStatus.className = "validation-message error";
 
         } finally {
@@ -2743,7 +2772,7 @@ predictionForm.addEventListener("submit", async (event) => {
 
 
         if (validationErrors.length > 0) {
-            displayPredictionError(validationErrors);
+            displayPredictionValidationError(validationErrors);
             return;
         }
 
@@ -2770,7 +2799,8 @@ predictionForm.addEventListener("submit", async (event) => {
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(typeof result.detail === "string" ? result.detail : "Prediction failed.");
+                displayPredictionError(result);
+                return;
             }
 
             const positiveClass = selectedModel.target.positive_class;
@@ -2778,8 +2808,8 @@ predictionForm.addEventListener("submit", async (event) => {
 
         } catch (error) {
             console.error("Prediction error:", error);
-            const messages = [error.message];
-            displayPredictionError(messages);
+            predictionResult.textContent = `❌ ${error.message}`;
+            predictionResult.classList.remove("hidden");
 
         } finally {
             predictButton.disabled = false;
