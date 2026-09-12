@@ -1537,7 +1537,7 @@ select {
     text-align: center;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1024px) {
     .input-fields-header,
     .input-field-row {
         grid-template-columns:
@@ -1646,7 +1646,7 @@ select {
    21. RESPONSIVE — MOBILE
 ========================================================= */
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
 
     .app-container {
         width: min(100% - 20px, var(--container));
