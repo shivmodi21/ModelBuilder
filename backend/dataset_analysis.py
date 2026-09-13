@@ -1,76 +1,49 @@
 import pandas as pd
 
-
 # =========================================================
 # HELPERS
 # =========================================================
 
-def _is_missing(value):
-    """
-    Determine whether a value should be treated as missing.
-
-    Handles:
-    - NaN
-    - None
-    - empty strings
-    - whitespace-only strings
-    """
-
+# Convert numeric-looking values
+def convert_numeric(value):
     if pd.isna(value):
-        return True
+        return value
 
-    if isinstance(value, str):
-        return value.strip() == ""
+    try:
+        number = float(value)
 
-    return False
+        if number.is_integer():
+            return int(number)
 
+        return number
 
+    except (ValueError, TypeError):
+        return value
+        
 def _clean_series(series: pd.Series) -> pd.Series:
     """
-    Return a copy of a column where empty/whitespace-only
-    strings are treated as missing.
+    Clean a Series by:
+    - Removing leading/trailing whitespace.
+    - Replacing multiple whitespace characters with a single space.
+    - Treating empty/whitespace-only strings as missing.
+    - Converting integer-looking strings to int.
+    - Converting float-looking strings to float.
+    - Leaving non-numeric strings unchanged.
     """
 
     cleaned = series.copy()
 
-    if pd.api.types.is_object_dtype(
-        cleaned
-    ) or pd.api.types.is_string_dtype(
-        cleaned
-    ):
+    if (pd.api.types.is_object_dtype(cleaned) or pd.api.types.is_string_dtype(cleaned)):
+        # Clean whitespace
+        cleaned = cleaned.str.strip()
+        cleaned = cleaned.str.replace(r"\s+", " ", regex=True)
 
-        cleaned = cleaned.map(
-            lambda value:
-                pd.NA
-                if (
-                    isinstance(value, str)
-                    and value.strip() == ""
-                )
-                else value
-        )
+        # Empty strings → missing
+        cleaned = cleaned.replace("", pd.NA)
+
+        cleaned = cleaned.map(convert_numeric)
 
     return cleaned
-
-
-def _json_safe(value):
-    """
-    Convert pandas/numpy scalar values into JSON-safe
-    Python values.
-    """
-
-    if pd.isna(value):
-        return None
-
-    if hasattr(value, "item"):
-
-        try:
-            return value.item()
-
-        except (ValueError, TypeError):
-            pass
-
-    return value
-
 
 def _stringify_values(values):
     """
@@ -81,22 +54,14 @@ def _stringify_values(values):
     user-visible values.
     """
 
-    return [
-        str(value)
-        for value in values
-        if not pd.isna(value)
-    ]
+    return [str(value) for value in values if not pd.isna(value)]
 
 
 # =========================================================
 # NUMERICAL COLUMN ANALYSIS
 # =========================================================
 
-def _analyze_numeric_column(
-    series: pd.Series,
-    non_missing_count: int,
-    unique_count: int
-):
+def _analyze_numeric_column(series: pd.Series, non_missing_count: int, unique_count: int):
     """
     Analyze a column whose non-missing values are all
     numerically interpretable.
@@ -110,43 +75,22 @@ def _analyze_numeric_column(
     Otherwise it is numerical.
     """
 
-    threshold = min(
-        10,
-        0.02 * non_missing_count
-    )
-
-    suggested_categorical = (
-        unique_count < threshold
-    )
-
+    threshold = min(10, 0.02 * non_missing_count)
+    suggested_categorical = (unique_count < threshold)
 
     if suggested_categorical:
 
         return {
-            "detected_nature":
-                "Numerical",
-
-            "suggested_nature":
-                "Categorical",
-
-            "suggestion":
-                (
-                    "This numerical feature has very "
-                    "few unique values and may be "
-                    "better treated as categorical."
-                )
+            "detected_nature": "Numerical",
+            "suggested_nature": "Categorical",
+            "suggestion": ("This numerical feature has very few unique values and may be better treated as categorical.")
         }
 
 
     return {
-        "detected_nature":
-            "Numerical",
-
-        "suggested_nature":
-            "Numerical",
-
-        "suggestion":
-            None
+        "detected_nature": "Numerical",
+        "suggested_nature": "Numerical",
+        "suggestion": None
     }
 
 
@@ -154,11 +98,7 @@ def _analyze_numeric_column(
 # CATEGORICAL / STRING COLUMN ANALYSIS
 # =========================================================
 
-def _analyze_categorical_column(
-    series: pd.Series,
-    non_missing_count: int,
-    unique_count: int
-):
+def _analyze_categorical_column(series: pd.Series, non_missing_count: int, unique_count: int):
     """
     Analyze a column containing non-numeric/string values.
 
@@ -172,55 +112,25 @@ def _analyze_categorical_column(
     """
 
     if non_missing_count == 0:
-
         return {
-            "detected_nature":
-                "Categorical",
-
-            "suggested_nature":
-                "Categorical",
-
-            "suggestion":
-                (
-                    "This column contains no non-missing "
-                    "values."
-                )
+            "detected_nature": "Categorical",
+            "suggested_nature": "Categorical",
+            "suggestion":("This column contains no non-missing values.")
         }
 
-
-    unique_percentage = (
-        unique_count /
-        non_missing_count
-    ) * 100
-
+    unique_percentage = (unique_count / non_missing_count) * 100
 
     if unique_percentage < 10:
-
         return {
-            "detected_nature":
-                "Categorical",
-
-            "suggested_nature":
-                "Categorical",
-
-            "suggestion":
-                None
+            "detected_nature": "Categorical",
+            "suggested_nature": "Categorical",
+            "suggestion": None
         }
 
-
     return {
-        "detected_nature":
-            "Categorical",
-
-        "suggested_nature":
-            "Categorical",
-
-        "suggestion":
-            (
-                "This feature has very little category "
-                "repetition and may not be useful for "
-                "ML training."
-            )
+        "detected_nature": "Categorical",
+        "suggested_nature": "Categorical",
+        "suggestion": ("This feature has very little category repetition and may not be useful for ML training.")
     }
 
 
@@ -228,50 +138,25 @@ def _analyze_categorical_column(
 # ANALYZE ONE COLUMN
 # =========================================================
 
-def analyze_column(
-    dataframe: pd.DataFrame,
-    column
-):
+def analyze_column(dataframe: pd.DataFrame, column):
     """
     Analyze one CSV column.
-
     Column name is preserved exactly as supplied by the CSV.
     """
 
-    original_series = dataframe[
-        column
-    ]
-
-    series = _clean_series(
-        original_series
-    )
-
+    original_series = dataframe[column]
+    series = _clean_series(original_series)
 
     non_missing = series.dropna()
+    non_missing_count = int(non_missing.shape[0])
 
+    missing_count = int(len(series) - non_missing_count)
+    missing_per = round((missing_count / len(series)) * 100, 4),
 
-    non_missing_count = int(
-        non_missing.shape[0]
-    )
+    unique_values = (non_missing.unique().tolist())
+    unique_count = len(unique_values)
 
-
-    missing_count = int(
-        len(series) -
-        non_missing_count
-    )
-
-
-    unique_values = (
-        non_missing
-        .unique()
-        .tolist()
-    )
-
-
-    unique_count = len(
-        unique_values
-    )
-
+    is_binary_categorical = (unique_count == 2)
 
     # -----------------------------------------------------
     # Empty column
@@ -280,130 +165,60 @@ def analyze_column(
     if non_missing_count == 0:
 
         return {
-
-            "name":
-                column,
-
-            "data_type":
-                "empty",
-
-            "detected_nature":
-                "Categorical",
-
-            "suggested_nature":
-                "Categorical",
-
-            "non_missing_rows":
-                0,
-
-            "missing_count":
-                missing_count,
-
-            "missing_percentage":
-                100.0,
-
-            "unique_count":
-                0,
-
-            "unique_values":
-                [],
-
-            "suggestion":
-                (
-                    "This column contains no "
-                    "non-missing values."
-                ),
-
-            "is_binary_categorical":
-                False
-
+            "name": column,
+            "data_type": "empty",
+            "detected_nature": "Categorical",
+            "suggested_nature": "Categorical",
+            "non_missing_rows": 0,
+            "missing_count": missing_count,
+            "missing_percentage": 100.0,
+            "unique_count": 0,
+            "unique_values": [],
+            "suggestion": ("This column contains no non-missing values."),
+            "is_binary_categorical": is_binary_categorical
         }
 
 
     # -----------------------------------------------------
     # Determine whether every non-missing value is numeric
     # -----------------------------------------------------
-
-    numeric_conversion = pd.to_numeric(
-        non_missing,
-        errors="coerce"
-    )
-
-
-    all_numeric = (
-        numeric_conversion.notna().all()
-    )
-
+    numeric_conversion = pd.to_numeric(non_missing, errors="coerce")
+    all_numeric = (numeric_conversion.notna().all())
 
     # -----------------------------------------------------
     # Strict numerical column
     # -----------------------------------------------------
 
     if all_numeric:
-
-        result = _analyze_numeric_column(
-            series=non_missing,
-            non_missing_count=non_missing_count,
-            unique_count=unique_count
-        )
+        result = _analyze_numeric_column(series=non_missing, non_missing_count=non_missing_count, unique_count=unique_count)
 
         detected_nature = result["detected_nature"]
         suggested_nature = result["suggested_nature"]
 
+        categorical_values = []
+
+        if suggested_nature == "Categorial":
+            categorical_values = _stringify_values(unique_values)
 
         return {
-
-            "name":
-                column,
-
-            "data_type":
-                "numeric",
-
-            "detected_nature":
-                detected_nature,
-
-            "suggested_nature":
-                suggested_nature,
-
-            "non_missing_rows":
-                non_missing_count,
-
-            "missing_count":
-                missing_count,
-
-            "missing_percentage":
-                round(
-                    (
-                        missing_count /
-                        len(series)
-                    ) * 100,
-                    4
-                ),
-
-            "unique_count":
-                unique_count,
-
-            "unique_values":
-                [],
-
-            "suggestion":
-                result["suggestion"],
-
-            "is_binary_categorical":
-                False
-
+            "name": column,
+            "data_type": "numeric",
+            "detected_nature": detected_nature,
+            "suggested_nature": suggested_nature,
+            "non_missing_rows": non_missing_count,
+            "missing_count": missing_count,
+            "missing_percentage": missing_per,
+            "unique_count": unique_count,
+            "unique_values": categorical_values,
+            "suggestion": result["suggestion"],
+            "is_binary_categorical": is_binary_categorical
         }
 
 
     # -----------------------------------------------------
     # Mixed / string column
     # -----------------------------------------------------
-
-    result = _analyze_categorical_column(
-        series=non_missing,
-        non_missing_count=non_missing_count,
-        unique_count=unique_count
-    )
+    result = _analyze_categorical_column(series=non_missing, non_missing_count=non_missing_count, unique_count=unique_count)
 
 
     # -----------------------------------------------------
@@ -415,52 +230,18 @@ def analyze_column(
 
     categorical_values = _stringify_values(unique_values)
 
-    is_binary_categorical = (
-        len(categorical_values) == 2
-    )
-
-
     return {
-
-        "name":
-            column,
-
-        "data_type":
-            "categorical",
-
-        "detected_nature":
-            result["detected_nature"],
-
-        "suggested_nature":
-            result["suggested_nature"],
-
-        "non_missing_rows":
-            non_missing_count,
-
-        "missing_count":
-            missing_count,
-
-        "missing_percentage":
-            round(
-                (
-                    missing_count /
-                    len(series)
-                ) * 100,
-                4
-            ),
-
-        "unique_count":
-            unique_count,
-
-        "unique_values":
-            categorical_values,
-
-        "suggestion":
-            result["suggestion"],
-
-        "is_binary_categorical":
-            is_binary_categorical
-
+        "name": column,
+        "data_type": "categorical",
+        "detected_nature": result["detected_nature"],
+        "suggested_nature": result["suggested_nature"],
+        "non_missing_rows": non_missing_count,
+        "missing_count": missing_count,
+        "missing_percentage": missing_per,
+        "unique_count": unique_count,
+        "unique_values": categorical_values,
+        "suggestion": result["suggestion"],
+        "is_binary_categorical": is_binary_categorical
     }
 
 
@@ -468,9 +249,7 @@ def analyze_column(
 # ANALYZE DATASET
 # =========================================================
 
-def analyze_dataset(
-    dataframe: pd.DataFrame
-):
+def analyze_dataset(dataframe: pd.DataFrame):
     """
     Analyze an uploaded CSV and return raw dataset
     information for the frontend.
@@ -484,39 +263,20 @@ def analyze_dataset(
     """
 
     if dataframe is None:
-
-        raise ValueError(
-            "No dataframe was provided."
-        )
-
+        raise ValueError("No dataframe was provided.")
 
     if dataframe.empty:
-
-        raise ValueError(
-            "The CSV file contains no rows."
-        )
-
+        raise ValueError("The CSV file contains no rows.")
 
     # -----------------------------------------------------
     # Preserve original CSV column names exactly
     # -----------------------------------------------------
 
-    column_names = list(
-        dataframe.columns
-    )
-
-
+    column_names = list(dataframe.columns)
     columns_info = []
 
-
     for column in column_names:
-
-        columns_info.append(
-            analyze_column(
-                dataframe=dataframe,
-                column=column
-            )
-        )
+        columns_info.append(analyze_column(dataframe=dataframe, column=column))
 
 
     # -----------------------------------------------------
@@ -525,35 +285,17 @@ def analyze_dataset(
 
     target_candidates = []
 
-
     for column_info in columns_info:
 
-        if (
-            column_info[
-                "detected_nature"
-            ] != "Categorical"
-        ):
-
+        if (column_info["detected_nature"] != "Categorical"):
             continue
 
-
-        if not column_info[
-            "is_binary_categorical"
-        ]:
-
+        if not column_info["is_binary_categorical"]:
             continue
-
 
         target_candidates.append({
-
-            "name":
-                column_info["name"],
-
-            "classes":
-                column_info[
-                    "unique_values"
-                ]
-
+            "name": column_info["name"],
+            "classes": column_info["unique_values"]
         })
 
 
@@ -562,20 +304,9 @@ def analyze_dataset(
     # -----------------------------------------------------
 
     return {
-
-        "rows":
-            int(len(dataframe)),
-
-        "columns":
-            int(len(column_names)),
-
-        "column_names":
-            column_names,
-
-        "columns_info":
-            columns_info,
-
-        "target_candidates":
-            target_candidates
-
+        "rows": int(len(dataframe)),
+        "columns": int(len(column_names)),
+        "column_names": column_names,
+        "columns_info": columns_info,
+        "target_candidates": target_candidates
     }

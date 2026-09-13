@@ -901,7 +901,7 @@ function applyNatureDefaults(field) {
             type: "none"
         };
         field.scaling = {
-            type: "none"
+            type: "standardization"
         };
         field.encoding = {
             type: "none"
@@ -1177,7 +1177,8 @@ async function analyzeDataset(file) {
         console.log("Dataset analysis response:", result);
 
         if (!response.ok) {
-            throw new Error(typeof result.detail === "string" ? result.detail : "Unable to analyze dataset.");
+            displayAnalysisError(result);
+            return;
         }
 
         // Populate fields
@@ -1191,8 +1192,8 @@ async function analyzeDataset(file) {
         const targetCandidates = Array.isArray(analysis.target_candidates) ? analysis.target_candidates : [];
 
         // Calculate feature counts
-        const numericalFeatures = columnsInfo.filter(column => (column.suggested_nature || column.nature) === "Numerical").length;
-        const categoricalFeatures = columnsInfo.filter(column => (column.suggested_nature || column.nature) === "Categorical").length;
+        const numericalFeatures = columnsInfo.filter(column => column.suggested_nature === "Numerical").length;
+        const categoricalFeatures = columnsInfo.filter(column => column.suggested_nature === "Categorical").length;
         const possibleTargetColumns = targetCandidates.length;
 
         // Display analysis summary
@@ -1262,6 +1263,27 @@ async function analyzeDataset(file) {
     }
 }
 
+function displayAnalysisError(result) {
+    let message = "Data Analysis failed.";
+
+    if (typeof result.detail === "string") {
+        message = result.detail;
+    }
+
+    else if (result.detail && typeof result.detail === "object") {
+        if (result.detail.error) {
+            message = result.detail.error;
+        }
+
+        else if (result.detail.message) {
+            message = result.detail.message;
+        }
+    }
+
+    datasetAnalysisStatus.textContent = "❌ " + message;
+    datasetAnalysisStatus.className = "dataset-analysis-status error";
+}
+
 function populateFieldsFromAnalysis(result) {
     if (!result || !Array.isArray(result.columns_info)) {
         return;
@@ -1270,35 +1292,10 @@ function populateFieldsFromAnalysis(result) {
     inputFields.length = 0;
 
     result.columns_info.forEach(column => {
-            const nature = column.suggested_nature || column.nature || "Numerical";
+            const nature = column.suggested_nature;
             const field = createDefaultField(column.name);
             field.nature = nature;
             applyNatureDefaults(field);
-
-            // Preserve backend suggestions
-            if (column.suggested_missing_value_strategy) {
-                field.missing_value_strategy = column.suggested_missing_value_strategy;
-            }
-
-            if (column.suggested_feature_engineering) {
-                field.feature_engineering = {
-                    type: column.suggested_feature_engineering
-                };
-            }
-
-
-            if (column.suggested_scaling) {
-                field.scaling = {
-                    type: column.suggested_scaling
-                };
-            }
-
-
-            if (column.suggested_encoding) {
-                field.encoding = {
-                    type: column.suggested_encoding
-                };
-            }
 
             inputFields.push(field);
         }

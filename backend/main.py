@@ -1,6 +1,7 @@
 import json
 import uuid
 import pandas as pd
+from io import BytesIO
 
 from fastapi import (
     FastAPI,
@@ -36,18 +37,9 @@ from .json_handler import (
     create_model_id,
 )
 
-from .dataset_analysis import (
-    analyze_dataset,
-)
-
-from .validate_dataset import (
-    get_categorical_options,
-    validate_dataset,
-)
-
-from .legacy_transformations import (
-    prepare_model_input,
-)
+from .dataset_analysis import analyze_dataset
+from .validate_dataset import validate_dataset
+from .error_handler import api_error
 
 
 # =========================================================
@@ -127,13 +119,11 @@ def get_model(model_id: str):
     metadata = get_metadata(model_id)
 
     if metadata is None:
-
-        raise HTTPException(
+        api_error(
             status_code=404,
-            detail=(
-                f"Model '{model_id}' "
-                "was not found."
-            ),
+            code='MODEL_NOT_FOUND',
+            title='Model Not Found',
+            message=f"Model '{model_id}' was not found."
         )
 
     return metadata
@@ -148,9 +138,11 @@ def delete_saved_model(model_id: str):
     deleted = delete_model(model_id)
 
     if not deleted:
-        raise HTTPException(
+        api_error(
             status_code=404,
-            detail=f"Model '{model_id}' was not found."
+            code='MODEL_NOT_FOUND',
+            title='Model Not Found',
+            message=f"Model '{model_id}' was not found."
         )
 
     return {
@@ -163,54 +155,40 @@ def delete_saved_model(model_id: str):
 # =========================================================
 
 @app.post("/api/analyze-dataset")
-async def analyze_training_dataset(
-    csv_file: UploadFile = File(...),
-):
+async def analyze_training_dataset(csv_file: UploadFile = File(...),):
 
     # -----------------------------------------------------
     # Validate file
     # -----------------------------------------------------
 
-    if not csv_file.filename:
-
-        raise HTTPException(
+    if not csv_file or not csv_file.filename:
+        api_error(
             status_code=400,
-            detail="No CSV file was provided.",
+            code='CSV_NOT_UPLOADED',
+            title='CSV Not Uploaded',
+            message="No CSV file was provided."
         )
-
-
-    if not csv_file.filename.lower().endswith(
-        ".csv"
-    ):
-
-        raise HTTPException(
+    elif not csv_file.filename.lower().endswith(".csv"):
+        api_error(
             status_code=400,
-            detail="Only CSV files are allowed.",
+            code='NOT_CSV_FILE',
+            title='Not CSV File',
+            message='Only CSV files are allowed.'
         )
-
 
     # -----------------------------------------------------
     # Read CSV
     # -----------------------------------------------------
 
     try:
-
-        dataframe = pd.read_csv(
-            csv_file.file
-        )
-
-    except HTTPException:
-        # Preserve structured validation errors for the frontend.
-        raise
-
+        contents = await csv_file.read()
+        dataframe = pd.read_csv(BytesIO(contents))
     except Exception as error:
-
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail=(
-                f"Unable to read CSV file: "
-                f"{error}"
-            ),
+            code='CSV_READING_FAILED',
+            title='Unable to read CSV file',
+            message=str(error)
         )
 
 
@@ -219,24 +197,21 @@ async def analyze_training_dataset(
     # -----------------------------------------------------
 
     try:
-
         analysis_result = analyze_dataset(dataframe)
-
     except ValueError as error:
-
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail=str(error),
+            code='VALUE_ERROR_IN_DATA_ANALYSIS',
+            title='Value Error Occured in Data Analysis',
+            message=str(error)
         )
 
     except Exception as error:
-
-        raise HTTPException(
+        api_error(
             status_code=500,
-            detail=(
-                f"Dataset analysis failed: "
-                f"{error}"
-            ),
+            code='DATA_ANALYSIS_FAILED',
+            title='Dataset Analysis Failed',
+            message=str(error)
         )
 
 
@@ -245,16 +220,9 @@ async def analyze_training_dataset(
     # -----------------------------------------------------
 
     return {
-
-        "success":
-            True,
-
-        "filename":
-            csv_file.filename,
-
-        "analysis":
-            analysis_result,
-
+        "success": True,
+        "filename": csv_file.filename,
+        "analysis": analysis_result,
     }
 
 
@@ -276,21 +244,19 @@ async def validate_training_dataset(
     # Validate file type
     # -----------------------------------------------------
 
-    if not csv_file.filename:
-
-        raise HTTPException(
+    if not csv_file or not csv_file.filename:
+        api_error(
             status_code=400,
-            detail="No CSV file was provided.",
+            code='CSV_NOT_UPLOADED',
+            title='CSV Not Uploaded',
+            message="No CSV file was provided."
         )
-
-
-    if not csv_file.filename.lower().endswith(
-        ".csv"
-    ):
-
-        raise HTTPException(
+    elif not csv_file.filename.lower().endswith(".csv"):
+        api_error(
             status_code=400,
-            detail="Only CSV files are allowed.",
+            code='NOT_CSV_FILE',
+            title='Not CSV File',
+            message='Only CSV files are allowed.'
         )
 
 
@@ -299,19 +265,13 @@ async def validate_training_dataset(
     # -----------------------------------------------------
 
     try:
-
-        fields_data = json.loads(
-            fields
-        )
-
+        fields_data = json.loads(fields)
     except json.JSONDecodeError:
-
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail=(
-                "Invalid input field "
-                "configuration."
-            ),
+            code='INVALID_INPUT_FIELD',
+            title='Invalid Input Field',
+            message="Invalid input field configuration for JSON."
         )
 
 
@@ -320,28 +280,21 @@ async def validate_training_dataset(
     # -----------------------------------------------------
 
     try:
-
-        dataframe = pd.read_csv(
-            csv_file.file
-        )
-
+        contents = await csv_file.read()
+        dataframe = pd.read_csv(BytesIO(contents))
     except Exception as error:
-
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail=(
-                f"Unable to read CSV file: "
-                f"{error}"
-            ),
+            code='CSV_READING_FAILED',
+            title='Unable to read CSV file',
+            message=str(error)
         )
-
 
     # -----------------------------------------------------
     # Validate configuration + dataset
     # -----------------------------------------------------
 
     try:
-
         validation_result = validate_dataset(
             dataframe=dataframe,
             fields=fields_data,
@@ -351,24 +304,22 @@ async def validate_training_dataset(
 
         validation_result["message"] = "Dataset is valid for training."
         validation_result["model_name"] = model_name.strip()
-        validation_result["model_choice"]= model_choice
+        validation_result["model_choice"] = model_choice
 
     except HTTPException:
         raise
 
     except Exception as error:
-        raise HTTPException(
+        api_error(
             status_code=500,
-            detail=(
-                f"Dataset validation failed: "
-                f"{error}"
-            ),
+            code='DATA_VALIDATION_FAILED',
+            title='Dataset Analysis Failed',
+            message=str(error)
         )
 
     # -----------------------------------------------------
     # Return result
     # -----------------------------------------------------
-
     return validation_result
 
 # =========================================================
@@ -390,15 +341,18 @@ async def train_endpoint(
     # -----------------------------------------------------
 
     if not csv_file or not csv_file.filename:
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail="CSV file not found"
+            code='CSV_NOT_UPLOADED',
+            title='CSV Not Uploaded',
+            message="No CSV file was provided."
         )
     elif not csv_file.filename.lower().endswith(".csv"):
-
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail="Only CSV files are supported."
+            code='NOT_CSV_FILE',
+            title='Not CSV File',
+            message='Only CSV files are allowed.'
         )
 
 
@@ -407,23 +361,14 @@ async def train_endpoint(
     # -----------------------------------------------------
 
     try:
-
         contents = await csv_file.read()
-
-        from io import BytesIO
-
-        dataframe = pd.read_csv(
-            BytesIO(contents)
-        )
-
+        dataframe = pd.read_csv(BytesIO(contents))
     except Exception as error:
-
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail=(
-                f"Unable to read CSV file: "
-                f"{error}"
-            )
+            code='CSV_READING_FAILED',
+            title='Unable to read CSV file',
+            message=str(error)
         )
 
 
@@ -432,27 +377,22 @@ async def train_endpoint(
     # -----------------------------------------------------
 
     try:
-
-        fields_data = json.loads(
-            fields
-        )
-
+        fields_data = json.loads(fields)
     except json.JSONDecodeError:
-
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail="Invalid input-field configuration."
+            code='INVALID_INPUT_FIELD',
+            title='Invalid Input Field',
+            message="Invalid input field configuration for JSON."
         )
 
 
-    if not isinstance(
-        fields_data,
-        list
-    ):
-
-        raise HTTPException(
+    if not isinstance(fields_data, list):
+        api_error(
             status_code=400,
-            detail="Input fields must be a list."
+            code='INVALID_INPUT_FIELD',
+            title='Invalid Input Field',
+            message="Input fields must be a list."
         )
 
 
@@ -461,35 +401,22 @@ async def train_endpoint(
     # -----------------------------------------------------
 
     try:
-
         validation_result = validate_dataset(
             dataframe=dataframe,
             fields=fields_data,
             target_column=target_column,
             positive_class=positive_class
         )
-
     except HTTPException:
         # Preserve structured validation errors for the frontend.
         raise
-
-    except ValueError as error:
-
-        raise HTTPException(
-            status_code=400,
-            detail=str(error)
-        )
-
     except Exception as error:
-
-        raise HTTPException(
+        api_error(
             status_code=500,
-            detail=(
-                f"Dataset validation failed: "
-                f"{error}"
-            )
+            code='DATA_VALIDATION_FAILED',
+            title='Dataset Analysis Failed',
+            message=str(error)
         )
-
 
     # -----------------------------------------------------
     # 5. Get enriched fields
@@ -500,18 +427,12 @@ async def train_endpoint(
     #   feature_engineering
     #   options (categorical)
     # -----------------------------------------------------
-
-    enriched_fields = validation_result[
-        "input_fields"
-    ]
-
+    enriched_fields = validation_result["input_fields"]
 
     # -----------------------------------------------------
     # 6. Train model
     # -----------------------------------------------------
-
     try:
-
         training_result = train_model(
             dataframe=dataframe,
             fields=enriched_fields,
@@ -519,25 +440,23 @@ async def train_endpoint(
             positive_class=positive_class,
             model_choice=model_choice,
         )
-
         model = training_result["model"]
         metrics = training_result["metrics"]
 
     except ValueError as error:
-
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail=str(error)
+            code='VALUE_ERROR_IN_TRAINING',
+            title='Value Error Occured During Training',
+            message=str(error)
         )
 
     except Exception as error:
-
-        raise HTTPException(
+        api_error(
             status_code=500,
-            detail=(
-                f"Model training failed: "
-                f"{error}"
-            )
+            code='MODEL_TRAINING_FAILED',
+            title='Model Training Failed',
+            message=str(error)
         )
 
 
@@ -572,127 +491,110 @@ async def train_endpoint(
 # =========================================================
 
 @app.post("/api/save-model")
-async def save_model_endpoint(
-    training_id: str = Form(...),
-):
+async def save_model_endpoint(training_id: str = Form(...),):
     # -----------------------------------------------------
     # Check training session
     # -----------------------------------------------------
 
     if training_id not in trained_models:
-
-        raise HTTPException(
+        api_error(
             status_code=404,
-            detail=(
-                "Training session was not found "
-                "or has already been saved."
-            ),
+            code='TRAINING_SESSION_NOT_FOUND',
+            title='Training Session Not Found',
+            message="Training session was not found or has already been saved."
         )
-
 
     training = trained_models[training_id]
 
     # -----------------------------------------------------
     # Create model ID
     # -----------------------------------------------------
-    model_id = create_model_id(training["model_name"])
+    try:
+        model_id = create_model_id(training["model_name"])
+    except ValueError as error:
+        api_error(
+            status_code=400,
+            code='VALUE_ERROR_IN_MODEL_ID_CREATION',
+            title='Value Error Occured in Model ID Creation',
+            message=str(error)
+        )
 
     # -----------------------------------------------------
     # Save model
     # -----------------------------------------------------
-
     try:
-
-        model_path = save_trained_model(
-
-            model=training["model"],
-
-            model_id=model_id,
-
-        )
-
+        model_path = save_trained_model(model=training["model"], model_id=model_id,)
     except FileExistsError as error:
-
-        raise HTTPException(
+        api_error(
             status_code=409,
-            detail=str(error),
+            code='FILE_EXISTS_ERROR',
+            title='Model Already Exists',
+            message=str(error)
         )
-
+    except Exception as error:
+        api_error(
+            status_code=500,
+            code='MODEL_STORING_FAILED',
+            title='Unable to save model',
+            message=str(error)
+        )
 
     # -----------------------------------------------------
     # Save metadata
     # -----------------------------------------------------
 
     try:
-
         metadata = create_metadata(
-
-            model_name=
-                training["model_name"],
-
-            model_file=
-                model_path.name,
-
-            model_type=
-                training["model_type"],
-
-            input_fields=
-                training["fields"],
-
-            target_column=
-                training["target_column"],
-
-            target_classes=
-                training["target_classes"],
-
-            positive_class=
-                training["positive_class"],
-
-            metrics=
-                training["metrics"],
-
+            model_name=training["model_name"],
+            model_file=model_path.name,
+            model_type=training["model_type"],
+            input_fields=training["fields"],
+            target_column=training["target_column"],
+            target_classes=training["target_classes"],
+            positive_class=training["positive_class"],
+            metrics=training["metrics"],
             model_id=model_id,
-
         )
-
+    except ValueError as error:
+        api_error(
+            status_code=400,
+            code='VALUE_ERROR_IN_METADATA_CREATION',
+            title='Value Error Occured in Metadata Creation',
+            message=str(error)
+        )
     except FileExistsError as error:
-
         # If metadata already exists but the model was
         # successfully written, remove the model so we
         # don't leave an inconsistent state.
-
         if model_path.exists():
             model_path.unlink()
 
-        raise HTTPException(
+        api_error(
             status_code=409,
-            detail=str(error),
+            code='FILE_EXISTS_ERROR',
+            title='Metadata Already Exists',
+            message=str(error)
         )
-
+    except Exception as error:
+        api_error(
+            status_code=500,
+            code='METADATA_STORING_FAILED',
+            title='Unable to save metadata',
+            message=str(error)
+        )
 
     # -----------------------------------------------------
     # Remove temporary training object
     # -----------------------------------------------------
-
-    del trained_models[
-        training_id
-    ]
-
+    del trained_models[training_id]
 
     # -----------------------------------------------------
     # Response
     # -----------------------------------------------------
-
     return {
-
         "success": True,
-
-        "message":
-            "Model saved successfully.",
-
-        "model":
-            metadata,
-
+        "message": "Model saved successfully.",
+        "model": metadata,
     }
 
 
@@ -701,76 +603,50 @@ async def save_model_endpoint(
 # =========================================================
 
 @app.post("/api/predict")
-async def predict_endpoint(
-    model_id: str = Form(...),
-    input_data: str = Form(...),
-):
-
+async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...),):
     # -----------------------------------------------------
     # Get model metadata
     # -----------------------------------------------------
 
-    metadata = get_metadata(
-        model_id
-    )
+    metadata = get_metadata(model_id)
 
     if metadata is None:
-
-        raise HTTPException(
+        api_error(
             status_code=404,
-            detail=(
-                f"Model '{model_id}' "
-                "was not found."
-            ),
+            code='MODEL_NOT_FOUND',
+            title='Model Not Found',
+            message=f"Model '{model_id}' was not found."
         )
-
 
     # -----------------------------------------------------
     # Parse input JSON
     # -----------------------------------------------------
 
     try:
-
-        user_data = json.loads(
-            input_data
-        )
-
+        user_data = json.loads(input_data)
     except json.JSONDecodeError:
-
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail="Invalid input data."
+            code='INVALID_INPUT_FIELD',
+            title='Invalid Input Field',
+            message="Invalid input field configuration for JSON."
         )
-
 
     # -----------------------------------------------------
     # Validate fields
     # -----------------------------------------------------
 
-    expected_fields = [
-        field["name"]
-        for field
-        in metadata.get(
-            "input_fields",
-            []
-        )
-    ]
-
-    missing_fields = [
-        field
-        for field in expected_fields
-        if field not in user_data
-    ]
+    expected_fields = [field["name"] for field in metadata.get("input_fields", [])]
+    missing_fields = [field for field in expected_fields if field not in user_data]
 
     if missing_fields:
-
-        raise HTTPException(
+        api_error(
             status_code=400,
-            detail={
-                "error":
-                    "Missing input fields.",
-                "missing_fields":
-                    missing_fields,
+            code='MISSING_INPUT_FIELDS',
+            title='Missing Input Fields',
+            message='Following input fields are empty: ',
+            details={
+                "missing_fields": missing_fields,
             }
         )
 
@@ -779,43 +655,28 @@ async def predict_endpoint(
     # Collect expected fields
     # -----------------------------------------------------
 
-    model_input = {
-        field: user_data[field]
-        for field in expected_fields
-    }
+    model_input = {field: user_data[field] for field in expected_fields}
 
     # -----------------------------------------------------
     # Load model
     # -----------------------------------------------------
 
     try:
-
-        model_path = get_model_path(
-            model_id
-        )
-
-        model = load_saved_model(
-            model_path
-        )
-
+        model_path = get_model_path(model_id)
+        model = load_saved_model(model_path)
     except FileNotFoundError:
-
-        raise HTTPException(
+        api_error(
             status_code=404,
-            detail=(
-                "Model metadata exists, "
-                "but the model file was not found."
-            ),
+            code='MODEL_FILE_NOT_FOUND',
+            title='Model File Not Found',
+            message='Model metadata exists, but the model file was not found.'
         )
-
     except Exception as error:
-
-        raise HTTPException(
+        api_error(
             status_code=500,
-            detail=(
-                f"Unable to load model: "
-                f"{error}"
-            ),
+            code='MODEL_LOADING_FAILED',
+            title='Unable to load model',
+            message=str(error)
         )
 
     # -----------------------------------------------------
@@ -823,43 +684,27 @@ async def predict_endpoint(
     # -----------------------------------------------------
 
     try:
-        dataframe = prepare_model_input(
-            input_data=model_input,
-            model=model,
-            metadata=metadata,
-        )
-
+        dataframe = pd.DataFrame([input_data])
     except Exception as error:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Unable to prepare model input: "
-                f"{error}"
-            ),
+        api_error(
+            status_code=500,
+            code='MODEL_INPUT_PREPARATION_FAILED',
+            title='Unable to prepare model input',
+            message=str(error)
         )
 
     # -----------------------------------------------------
     # Predict
     # -----------------------------------------------------
-
     try:
-
-        result = predict(
-            model,
-            dataframe
-        )
-
+        result = predict(model, dataframe)
     except Exception as error:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Prediction failed: "
-                f"{error}"
-            ),
+        api_error(
+            status_code=500,
+            code='MODEL_PREDICTION_FAILED',
+            title='Model Prediction Failed',
+            message=str(error)
         )
-
 
     # -----------------------------------------------------
     # Response
@@ -868,17 +713,9 @@ async def predict_endpoint(
     return {
         "success": True,
         "model_id": model_id,
-        "model_name":
-            metadata.get(
-                "model_name",
-                model_id
-            ),
-        "prediction":
-            result["prediction"],
-        "probabilities":
-            result.get(
-                "probabilities"
-            ),
+        "model_name": metadata.get("model_name", model_id),
+        "prediction": result["prediction"],
+        "probabilities": result.get("probabilities"),
     }
 
 
@@ -889,11 +726,4 @@ async def predict_endpoint(
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
 
-app.mount(
-    "/",
-    StaticFiles(
-        directory=FRONTEND_DIR,
-        html=True
-    ),
-    name="frontend"
-)
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

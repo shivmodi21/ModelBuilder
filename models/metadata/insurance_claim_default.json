@@ -1,0 +1,497 @@
+{
+    "model_id": "insurance_claim_default",
+    "model_name": "Insurance Claim",
+    "model_file": "insurance_claim_default.pkl",
+    "model_type": "gradient_boosting",
+    "task": "binary_classification",
+    "target": {
+        "name": "fraud_reported",
+        "classes": [
+            "N",
+            "Y"
+        ],
+        "positive_class": "N"
+    },
+    "input_fields": [
+        {
+            "id": 1789294605984.952,
+            "name": "months_as_customer",
+            "nature": "Numerical",
+            "missing_value_strategy": "mean",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.084,
+            "name": "age",
+            "nature": "Numerical",
+            "missing_value_strategy": "mean",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.219,
+            "name": "policy_csl",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "250/500",
+                "100/300",
+                "500/1000"
+            ]
+        },
+        {
+            "id": 1789294605984.3555,
+            "name": "policy_deductable",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.0488,
+            "name": "policy_annual_premium",
+            "nature": "Numerical",
+            "missing_value_strategy": "mean",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.2156,
+            "name": "umbrella_limit",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.5366,
+            "name": "insured_sex",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "MALE",
+                "FEMALE"
+            ]
+        },
+        {
+            "id": 1789294605984.8523,
+            "name": "insured_education_level",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "MD",
+                "PhD",
+                "Associate",
+                "Masters",
+                "High School",
+                "College",
+                "JD"
+            ]
+        },
+        {
+            "id": 1789294605984.5505,
+            "name": "insured_occupation",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "craft-repair",
+                "machine-op-inspct",
+                "sales",
+                "armed-forces",
+                "tech-support",
+                "prof-specialty",
+                "other-service",
+                "priv-house-serv",
+                "exec-managerial",
+                "protective-serv",
+                "transport-moving",
+                "handlers-cleaners",
+                "adm-clerical",
+                "farming-fishing"
+            ]
+        },
+        {
+            "id": 1789294605984.4885,
+            "name": "insured_relationship",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "husband",
+                "other-relative",
+                "own-child",
+                "unmarried",
+                "wife",
+                "not-in-family"
+            ]
+        },
+        {
+            "id": 1789294605984.9136,
+            "name": "capital-gains",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.166,
+            "name": "capital-loss",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.1646,
+            "name": "incident_type",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "Single Vehicle Collision",
+                "Vehicle Theft",
+                "Multi-vehicle Collision",
+                "Parked Car"
+            ]
+        },
+        {
+            "id": 1789294605984.6052,
+            "name": "collision_type",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "Side Collision",
+                "Rear Collision",
+                "Front Collision"
+            ]
+        },
+        {
+            "id": 1789294605984.5532,
+            "name": "incident_severity",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "Major Damage",
+                "Minor Damage",
+                "Total Loss",
+                "Trivial Damage"
+            ]
+        },
+        {
+            "id": 1789294605984.3179,
+            "name": "authorities_contacted",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "Police",
+                "Fire",
+                "Other",
+                "Ambulance"
+            ]
+        },
+        {
+            "id": 1789294605984.6208,
+            "name": "incident_hour_of_the_day",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.4106,
+            "name": "number_of_vehicles_involved",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.6096,
+            "name": "property_damage",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "YES",
+                "NO"
+            ]
+        },
+        {
+            "id": 1789294605984.2847,
+            "name": "bodily_injuries",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.6135,
+            "name": "witnesses",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.007,
+            "name": "police_report_available",
+            "nature": "Categorical",
+            "missing_value_strategy": "mode",
+            "feature_engineering": {
+                "type": "none"
+            },
+            "scaling": {
+                "type": "none"
+            },
+            "encoding": {
+                "type": "label_encoding"
+            },
+            "options": [
+                "YES",
+                "NO"
+            ]
+        },
+        {
+            "id": 1789294605984.0986,
+            "name": "total_claim_amount",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "log1p"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.6594,
+            "name": "injury_claim",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "log1p"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.3457,
+            "name": "property_claim",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "log1p"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        },
+        {
+            "id": 1789294605984.1787,
+            "name": "vehicle_claim",
+            "nature": "Numerical",
+            "missing_value_strategy": "median",
+            "feature_engineering": {
+                "type": "log1p"
+            },
+            "scaling": {
+                "type": "standardization"
+            },
+            "encoding": {
+                "type": "none"
+            }
+        }
+    ],
+    "metrics": {
+        "validation": {
+            "accuracy": 0.83,
+            "precision": 0.8726114649681529,
+            "recall": 0.9072847682119205,
+            "f1_score": 0.8896103896103896,
+            "roc_auc": 0.18340316258953912
+        },
+        "test": {
+            "accuracy": 0.68,
+            "precision": 0.7654320987654321,
+            "recall": 0.8266666666666667,
+            "f1_score": 0.7948717948717948,
+            "roc_auc": 0.3776
+        }
+    },
+    "deletable": false
+}

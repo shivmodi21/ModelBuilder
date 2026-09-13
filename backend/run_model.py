@@ -41,39 +41,58 @@ def coerce_numeric(values):
 # =========================================================
 
 MODEL_FACTORIES = {
-
-    "logistic_regression":
-        LogisticRegression(
-            max_iter=MAX_ITERATIONS
-        ),
-
-    "decision_tree":
-        DecisionTreeClassifier(
-            random_state=42
-        ),
-
-    "random_forest":
-        RandomForestClassifier(
-            n_estimators=200,
-            random_state=42
-        ),
-
-    "gradient_boosting":
-        GradientBoostingClassifier(
-            random_state=42
-        ),
-
-    "knn":
-        KNeighborsClassifier(
-            n_neighbors=5
-        ),
-
-    "svm":
-        SVC(
-            probability=True,
-            random_state=42
-        ),
+    "logistic_regression": LogisticRegression(max_iter=MAX_ITERATIONS),
+    "decision_tree": DecisionTreeClassifier(random_state=42),
+    "random_forest": RandomForestClassifier(n_estimators=200, random_state=42),
+    "gradient_boosting": GradientBoostingClassifier(random_state=42),
+    "knn": KNeighborsClassifier(n_neighbors=5),
+    "svm": SVC(probability=True, random_state=42),
 }
+
+
+# =========================================================
+# CLEAN THE DATASET
+# =========================================================
+
+def convert_numeric(value):
+    if pd.isna(value):
+        return value
+
+    try:
+        number = float(value)
+
+        if number.is_integer():
+            return int(number)
+
+        return number
+
+    except (ValueError, TypeError):
+        return value
+
+def _clean_series(series: pd.Series) -> pd.Series:
+    """
+    Clean a Series by:
+    - Removing leading/trailing whitespace.
+    - Replacing multiple whitespace characters with a single space.
+    - Treating empty/whitespace-only strings as missing.
+    - Converting integer-looking strings to int.
+    - Converting float-looking strings to float.
+    - Leaving non-numeric strings unchanged.
+    """
+
+    cleaned = series.copy()
+
+    if (pd.api.types.is_object_dtype(cleaned) or pd.api.types.is_string_dtype(cleaned)):
+        # Clean whitespace
+        cleaned = cleaned.str.strip()
+        cleaned = cleaned.str.replace(r"\s+", " ", regex=True)
+
+        # Empty strings → missing
+        cleaned = cleaned.replace("", pd.NA)
+
+        cleaned = cleaned.map(convert_numeric)
+
+    return cleaned
 
 
 # =========================================================
@@ -86,10 +105,7 @@ def get_classifier(model_choice):
     """
 
     if model_choice not in MODEL_FACTORIES:
-
-        raise ValueError(
-            f"Unsupported model: {model_choice}"
-        )
+        raise ValueError(f"Unsupported model: {model_choice}")
 
     # Create a fresh instance rather than reusing the
     # classifier stored in MODEL_FACTORIES.
@@ -128,40 +144,25 @@ def create_preprocessor(fields):
 
     transformers = []
     for field in numerical_features:
-
         field_name = field["name"]
 
-        engineering_type = field.get(
-            "feature_engineering",
-            {"type": "none"}
-        ).get("type", "none")
-
+        engineering_type = field.get("feature_engineering", {"type": "none"}).get("type", "none")
         if engineering_type not in transformations:
-
-            raise ValueError(
-                f"Unsupported feature engineering "
-                f"'{engineering_type}' for feature "
-                f"'{field_name}'."
-            )
+            raise ValueError(f"Unsupported feature engineering '{engineering_type}' for feature '{field_name}'.")
 
         steps = []
         missing_strategy = field.get("missing_value_strategy", "median")
         steps.append(("numeric_conversion", FunctionTransformer(
             coerce_numeric, validate=False, feature_names_out="one-to-one"
         )))
+
         if missing_strategy != "skip":
             steps.append(("imputer", SimpleImputer(strategy=missing_strategy)))
 
         transformation = transformations[engineering_type]
 
         if transformation is not None:
-
-            steps.append(
-                (
-                    "feature_engineering",
-                    FunctionTransformer( transformation, feature_names_out="one-to-one")
-                )
-            )
+            steps.append(("feature_engineering", FunctionTransformer(transformation, feature_names_out="one-to-one")))
 
         scalers = {
             "standardization": StandardScaler(),
@@ -173,9 +174,7 @@ def create_preprocessor(fields):
         if scaler is not None:
             steps.append(("scaler", scaler))
 
-        transformers.append((
-            f"numerical_{field_name}", Pipeline(steps=steps), [field_name]
-        ))
+        transformers.append((f"numerical_{field_name}", Pipeline(steps=steps), [field_name]))
 
 
     # -----------------------------------------------------
@@ -201,17 +200,9 @@ def create_preprocessor(fields):
     # -----------------------------------------------------
 
     if not transformers:
+        raise ValueError("At least one Numerical or Categorical input field is required.")
 
-        raise ValueError(
-            "At least one Numerical or Categorical "
-            "input field is required."
-        )
-
-
-    return ColumnTransformer(
-        transformers=transformers,
-        remainder="drop"
-    )
+    return ColumnTransformer(transformers=transformers, remainder="drop")
 
 
 # =========================================================
@@ -255,41 +246,27 @@ def create_model_pipeline(
 # TRAIN MODEL
 # =========================================================
 
-def train_model(
-    dataframe,
-    fields,
-    target_column,
-    positive_class,
-    model_choice,
-    random_state=42
-):
+def train_model(dataframe, fields, target_column, positive_class, model_choice, random_state=42):
     """
     Train the selected binary classification model.
 
     Returns the trained Pipeline and evaluation results.
     """
 
+    dataframe = dataframe.apply(_clean_series)
+
     # -----------------------------------------------------
     # Feature names
     # -----------------------------------------------------
 
-    feature_names = [
-        field["name"]
-        for field in fields
-    ]
-
+    feature_names = [field["name"] for field in fields]
 
     # -----------------------------------------------------
     # X and y
     # -----------------------------------------------------
 
-    X = dataframe[
-        feature_names
-    ].copy()
-
-    y = dataframe[
-        target_column
-    ].copy()
+    X = dataframe[feature_names].copy()
+    y = dataframe[target_column].copy()
 
     # A selected "skip" strategy deliberately excludes incomplete rows rather
     # than silently applying a different imputation policy.
@@ -303,16 +280,10 @@ def train_model(
     X = X.loc[valid_rows].copy()
     y = y.loc[valid_rows].copy()
 
-    classes = sorted(
-        y.unique(),
-        key=lambda value: str(value)
-    )
+    classes = sorted(y.unique(), key=lambda value: str(value))
 
     if positive_class not in classes:
-        raise ValueError(
-            f"Positive class '{positive_class}' is not present in the target column."
-        )
-
+        raise ValueError(f"Positive class '{positive_class}' is not present in the target column.")
 
     # -----------------------------------------------------
     # Split 70% training, 20% validation, and 10% test.
@@ -335,20 +306,14 @@ def train_model(
         )
 
     except ValueError as error:
-
-        raise ValueError(
-            f"Unable to split dataset: {error}"
-        )
+        raise ValueError(f"Unable to split dataset: {error}")
 
 
     # -----------------------------------------------------
     # Create pipeline
     # -----------------------------------------------------
 
-    pipeline = create_model_pipeline(
-        fields,
-        model_choice
-    )
+    pipeline = create_model_pipeline(fields, model_choice)
 
 
     # -----------------------------------------------------
@@ -356,17 +321,9 @@ def train_model(
     # -----------------------------------------------------
 
     try:
-
-        pipeline.fit(
-            X_train,
-            y_train
-        )
-
+        pipeline.fit(X_train, y_train)
     except Exception as error:
-
-        raise ValueError(
-            f"Model training failed: {error}"
-        )
+        raise ValueError(f"Model training failed: {error}")
 
 
     # -----------------------------------------------------
@@ -420,76 +377,46 @@ def train_model(
 def predict(model, input_data):
     """
     Generate prediction from a trained model.
-
     input_data must be a pandas DataFrame.
     """
 
-    prediction = model.predict(
-        input_data
-    )
+    prediction = model.predict(input_data)
 
-    result = {
-        "prediction": str(
-            prediction[0]
-        )
+    result: dict[str, str | dict[str, float]] = {
+        "prediction": str(prediction[0])
     }
 
     # -----------------------------------------------------
     # Probability
     # -----------------------------------------------------
-
-    if hasattr(
-        model,
-        "predict_proba"
-    ):
-
-        probabilities = (
-            model.predict_proba(
-                input_data
-            )[0]
-        )
+    if hasattr(model, "predict_proba"):
+        probabilities = (model.predict_proba(input_data)[0])
 
         # Pipeline -> classifier
-        if hasattr(
-            model,
-            "named_steps"
-        ):
-
-            classifier = (
-                model
-                .named_steps
-                .get("classifier")
-            )
+        if hasattr(model, "named_steps"):
+            classifier = (model.named_steps.get("classifier"))
 
             if classifier is not None:
                 classes = classifier.classes_
-
             else:
                 classes = model.classes_
-
         else:
             classes = model.classes_
 
 
         result["probabilities"] = {
-
             str(cls): float(probability)
-
             for cls, probability
             in zip(
                 classes,
                 probabilities
             )
-
         }
 
     return result
 
 
-def save_trained_model(
-    model,
-    model_id
-):
+def save_trained_model(model, model_id):
     """
     Save a trained scikit-learn pipeline as a .pkl file.
 
@@ -498,21 +425,12 @@ def save_trained_model(
 
     model_id = str(model_id).strip()
 
-    model_path = (
-        MODELS_DIR /
-        f"{model_id}.pkl"
-    )
+    model_path = (MODELS_DIR / f"{model_id}.pkl")
 
     if model_path.exists():
+        raise FileExistsError(f"Model '{model_id}' already exists.")
 
-        raise FileExistsError(
-            f"Model '{model_id}' already exists."
-        )
-
-    joblib.dump(
-        model,
-        model_path
-    )
+    joblib.dump(model, model_path)
 
     return model_path
 
@@ -523,8 +441,6 @@ def load_saved_model(model_path):
     """
 
     if not model_path.exists():
-        raise FileNotFoundError(
-            f"Model file not found: {model_path}"
-        )
+        raise FileNotFoundError(f"Model file not found: {model_path}")
 
     return joblib.load(model_path)

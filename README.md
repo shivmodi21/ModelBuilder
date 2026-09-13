@@ -481,7 +481,6 @@ LoanApproval/
 │   ├── dataset_analysis.py
 │   ├── validate_dataset.py
 │   ├── json_handler.py
-│   └── legacy_transformations.py
 │
 ├── models/
 │   ├── *.pkl
@@ -501,7 +500,6 @@ LoanApproval/
 | `validate_dataset.py`       | Dataset/configuration validation                      |
 | `run_model.py`              | Preprocessing, training, evaluation, prediction       |
 | `json_handler.py`           | Model/metadata persistence                            |
-| `legacy_transformations.py` | Compatibility with legacy Loan Approval preprocessing |
 
 The application configuration explicitly defines binary classification as the task and lists the supported models.
 

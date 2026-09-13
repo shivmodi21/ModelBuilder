@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from fastapi import HTTPException
 from .config import SUPPORTED_FIELD_TYPES
+from .error_handler import api_error
 
 ALLOWED_FEATURE_ENGINEERING = {
     "none",
@@ -35,6 +36,50 @@ ALLOWED_CATEGORICAL_MISSING_STRATEGIES = {
     "mode",
     "skip",
 }
+
+# =========================================================
+# CLEAN THE DATASET
+# =========================================================
+
+def convert_numeric(value):
+    if pd.isna(value):
+        return value
+
+    try:
+        number = float(value)
+
+        if number.is_integer():
+            return int(number)
+
+        return number
+
+    except (ValueError, TypeError):
+        return value
+
+def _clean_series(series: pd.Series) -> pd.Series:
+    """
+    Clean a Series by:
+    - Removing leading/trailing whitespace.
+    - Replacing multiple whitespace characters with a single space.
+    - Treating empty/whitespace-only strings as missing.
+    - Converting integer-looking strings to int.
+    - Converting float-looking strings to float.
+    - Leaving non-numeric strings unchanged.
+    """
+
+    cleaned = series.copy()
+
+    if (pd.api.types.is_object_dtype(cleaned) or pd.api.types.is_string_dtype(cleaned)):
+        # Clean whitespace
+        cleaned = cleaned.str.strip()
+        cleaned = cleaned.str.replace(r"\s+", " ", regex=True)
+
+        # Empty strings → missing
+        cleaned = cleaned.replace("", pd.NA)
+
+        cleaned = cleaned.map(convert_numeric)
+
+    return cleaned
 
 # =========================================================
 # FIELD CONFIGURATION VALIDATION
@@ -565,9 +610,7 @@ def validate_numerical_values(
             "valid": True
         }
 
-    series = dataframe[
-        field_name
-    ]
+    series = dataframe[field_name]
 
     non_missing = series.dropna()
     numeric_values = pd.to_numeric(non_missing, errors="coerce")
@@ -1538,10 +1581,7 @@ def validate_dataset_size(dataframe):
 # TARGET DATA VALIDATION
 # =========================================================
 
-def validate_target_data(
-    dataframe,
-    target_column
-):
+def validate_target_data(dataframe, target_column):
     """
     Validate the target variable.
 
@@ -1682,22 +1722,60 @@ def positive_class_validation(positive_class, target_classes):
             }
         )
 
+def get_invalid_numerical_values(series: pd.Series):
+    """Return distinct non-empty values that cannot be parsed as numbers."""
+    non_missing = series.dropna()
+    numeric_values = pd.to_numeric(non_missing, errors="coerce")
+    invalid_mask = numeric_values.isna()
+
+    return (non_missing[invalid_mask].astype(str).unique().tolist())
+
+
+def validate_all_numerical_fields(dataframe: pd.DataFrame, fields: list):
+    """Report every numerical column containing non-numeric values."""
+    invalid_fields = []
+
+    for field in fields:
+        if field["nature"] != "Numerical":
+            continue
+
+        invalid_values = get_invalid_numerical_values(dataframe[field["name"]])
+
+        if invalid_values:
+            invalid_fields.append({
+                "field": field["name"],
+                "invalid_values": invalid_values[:20],
+                "invalid_count": len(invalid_values)
+            })
+
+    if invalid_fields:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "invalid_numerical_values",
+                "message": (
+                    "One or more Numerical fields contain non-numeric "
+                    "values. Change their data type to Categorical or "
+                    "correct the source data."
+                ),
+                "fields": invalid_fields
+            }
+        )
+
 
 # =========================================================
 # COMPLETE DATASET VALIDATION
 # =========================================================
 
-def validate_dataset(
-    dataframe: pd.DataFrame,
-    fields: list,
-    target_column: str,
-    positive_class: str
-):
+def validate_dataset(dataframe: pd.DataFrame, fields: list, target_column: str, positive_class: str):
     """
     Run all dataset validation checks.
 
     Returns validated and enriched dataset metadata.
     """
+
+    dataframe = dataframe.apply(_clean_series)
+
     # -----------------------------------------------------
     # 1. Input fields
     # -----------------------------------------------------
@@ -1760,46 +1838,32 @@ def validate_dataset(
         # Numerical data validation
         # -------------------------------------------------
 
-        numerical_result = (
-            validate_numerical_values(dataframe=dataframe, field=field)
-        )
+        numerical_result = (validate_numerical_values(dataframe=dataframe, field=field))
 
         # -------------------------------------------------
         # Missing-value strategy
         # -------------------------------------------------
 
-        missing_result = (
-            validate_missing_value_strategy(dataframe=dataframe, field=field)
-        )
+        missing_result = (validate_missing_value_strategy(dataframe=dataframe, field=field))
 
 
         # -------------------------------------------------
         # Feature engineering
         # -------------------------------------------------
-        feature_engineering_result = (
-            validate_feature_engineering_values(dataframe=dataframe, field=field)
-        )
+        feature_engineering_result = (validate_feature_engineering_values(dataframe=dataframe, field=field))
 
         # -------------------------------------------------
         # Scaling
         # -------------------------------------------------
-        scaling_result = (
-            validate_scaling(dataframe=dataframe, field=field)
-        )
-
+        scaling_result = (validate_scaling(dataframe=dataframe, field=field))
 
         # -------------------------------------------------
         # Low category repetition warning
         # -------------------------------------------------
-        repetition_warning = (
-            get_low_repetition_warning(dataframe=dataframe, field=field)
-        )
+        repetition_warning = (get_low_repetition_warning(dataframe=dataframe, field=field))
 
         if repetition_warning is not None:
-
-            warnings.append(
-                repetition_warning
-            )
+            warnings.append(repetition_warning)
 
         # -------------------------------------------------
         # Store field validation result
@@ -1818,13 +1882,7 @@ def validate_dataset(
     # 10. ONE-HOT EXPANSION
     # =====================================================
 
-    one_hot_result = (
-        calculate_one_hot_expansion(
-            dataframe=dataframe,
-            fields=fields
-        )
-    )
-
+    one_hot_result = (calculate_one_hot_expansion(dataframe=dataframe, fields=fields))
 
     if one_hot_result["warning"] is not None:
         warnings.append(one_hot_result["warning"])
@@ -1848,31 +1906,23 @@ def validate_dataset(
         # Categorical options
         # -------------------------------------------------
         if nature == "Categorical":
-
-            field_copy["options"] = (
-                categorical_options.get(
-                    field_name,
-                    []
-                )
-            )
-
+            field_copy["options"] = (categorical_options.get(field_name, []))
 
         # -------------------------------------------------
         # Feature engineering default
         # -------------------------------------------------
 
         if ("feature_engineering" not in field_copy):
-            field_copy["feature_engineering"] = {"type": "none"}
-
+            field_copy["feature_engineering"] = {
+                "type": "none"
+            }
 
         # -------------------------------------------------
         # Scaling default
         # -------------------------------------------------
 
         if nature == "Numerical":
-
             if "scaling" not in field_copy:
-
                 field_copy["scaling"] = {
                     "type": "none"
                 }
@@ -1888,7 +1938,6 @@ def validate_dataset(
                 field_copy["encoding"] = {
                     "type": "label_encoding"
                 }
-
 
         enriched_fields.append(field_copy)
     
@@ -1913,17 +1962,9 @@ def validate_dataset(
 
         "target":{
             "column": target_column,
-            "classes": [
-                str(value)
-                for value
-                in target_classes
-            ],
+            "classes": [str(value) for value in target_classes],
             "positive_class": positive_class,
-            "negative_class": next(
-                                value
-                                for value in target_classes
-                                if str(value) != str(positive_class)
-                            )
+            "negative_class": next(value for value in target_classes if str(value) != str(positive_class))
         },
 
         "ignored_columns": ignored_columns,
@@ -1933,51 +1974,3 @@ def validate_dataset(
             "one_hot_encoding": one_hot_result
         }
     }
-
-
-def get_invalid_numerical_values(series: pd.Series):
-    """Return distinct non-empty values that cannot be parsed as numbers."""
-    non_missing = series.dropna()
-    numeric_values = pd.to_numeric(non_missing, errors="coerce")
-    invalid_mask = numeric_values.isna()
-
-    return (
-        non_missing[invalid_mask]
-        .astype(str)
-        .unique()
-        .tolist()
-    )
-
-
-def validate_all_numerical_fields(dataframe: pd.DataFrame, fields: list):
-    """Report every numerical column containing non-numeric values."""
-    invalid_fields = []
-
-    for field in fields:
-        if field["nature"] != "Numerical":
-            continue
-
-        invalid_values = get_invalid_numerical_values(
-            dataframe[field["name"]]
-        )
-
-        if invalid_values:
-            invalid_fields.append({
-                "field": field["name"],
-                "invalid_values": invalid_values[:20],
-                "invalid_count": len(invalid_values)
-            })
-
-    if invalid_fields:
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "error": "invalid_numerical_values",
-                "message": (
-                    "One or more Numerical fields contain non-numeric "
-                    "values. Change their data type to Categorical or "
-                    "correct the source data."
-                ),
-                "fields": invalid_fields
-            }
-        )
