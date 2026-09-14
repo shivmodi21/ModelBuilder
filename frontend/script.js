@@ -400,8 +400,8 @@ function createMetricsHTML(metrics) {
         return "";
     }
 
-    const validation = metrics.validation || {};
-    const test = metrics.test || {};
+    const validation = metrics.validation;
+    const test = metrics.test;
     const hasValidationMetrics = Object.keys(validation).length > 0;
     const hasTestMetrics = Object.keys(test).length > 0;
 
@@ -1185,7 +1185,7 @@ async function analyzeDataset(file) {
         populateFieldsFromAnalysis(result.analysis);
         datasetAnalysisStatus.className = "dataset-analysis-status success";
         
-        const analysis = result.analysis || {};
+        const analysis = result.analysis;
         const totalColumns = analysis.columns ?? 0;
         const totalRows = analysis.rows ?? 0;
         const columnsInfo = Array.isArray(analysis.columns_info) ? analysis.columns_info : [];
@@ -1301,7 +1301,7 @@ function populateFieldsFromAnalysis(result) {
         }
     );
 
-    populateTargetColumns(result.target_candidates || []);
+    populateTargetColumns(result.target_candidates);
     renderInputFields();
     validateConfiguration();
 }
@@ -1810,28 +1810,28 @@ function displayValidationResult(result) {
                     <div>
                         <span>Rows</span>
                         <strong>
-                            ${result.rows ?? 0}
+                            ${result.rows}
                         </strong>
                     </div>
 
                     <div>
                         <span>CSV Columns</span>
                         <strong>
-                            ${result.columns ?? 0}
+                            ${result.columns}
                         </strong>
                     </div>
 
                     <div>
                         <span>Input Columns</span>
                         <strong>
-                            ${result.input_columns?.length || 0}
+                            ${result.input_columns?.length}
                         </strong>
                     </div>
 
                     <div>
                         <span>Target</span>
                         <strong>
-                            ${escapeHTML(target.column || "")}
+                            ${escapeHTML(target.column)}
                         </strong>
                     </div>
 
@@ -1848,22 +1848,22 @@ function displayValidationResult(result) {
             <div class="validation-target">
                 <div>
                     <strong>Column:</strong>
-                    ${escapeHTML(target.column || "")}
+                    ${escapeHTML(target.column)}
                 </div>
 
                 <div>
                     <strong>Classes:</strong>
-                    ${escapeHTML(target.classes?.join(", ") || "")}
+                    ${escapeHTML(target.classes?.join(", "))}
                 </div>
 
                 <div>
                     <strong>Positive class:</strong>
-                    ${escapeHTML(target.positive_class || "")}
+                    ${escapeHTML(target.positive_class)}
                 </div>
 
                 <div>
                     <strong>Negative class:</strong>
-                    ${escapeHTML(target.negative_class || "")}
+                    ${escapeHTML(target.negative_class)}
                 </div>
             </div>
         </div>
@@ -1897,12 +1897,12 @@ function displayValidationResult(result) {
                 reportHTML += `
                     <tr>
                         <td class="validation-field-name">
-                            ${escapeHTML(field.field || "")}
+                            ${escapeHTML(field.field)}
                         </td>
 
                         <td>
                             <span class="validation-nature">
-                                ${escapeHTML(field.nature || "")}
+                                ${escapeHTML(field.nature)}
                             </span>
                         </td>
 
@@ -1945,7 +1945,7 @@ function displayValidationResult(result) {
 
     // One-hot encoding
     if (oneHot && oneHot.original_columns !== undefined) {
-        const increase = Number(oneHot.increase_percentage || 0);
+        const increase = Number(oneHot.increase_percentage);
         const oneHotWarning = increase > 100;
 
         reportHTML += `
@@ -2026,15 +2026,15 @@ function displayValidationResult(result) {
                         <tr>
 
                             <td>
-                                ${escapeHTML(feature.name || "")}
+                                ${escapeHTML(feature.name)}
                             </td>
 
                             <td>
-                                ${feature.unique_classes ?? 0}
+                                ${feature.unique_classes}
                             </td>
 
                             <td>
-                                ${escapeHTML((feature.classes || []).join(", "))}
+                                ${escapeHTML((feature.classes).join(", "))}
                             </td>
 
                         </tr>
@@ -2078,7 +2078,7 @@ function displayValidationResult(result) {
                         </div>
 
                         <p>
-                            ${escapeHTML(warning.message || "")}
+                            ${escapeHTML(warning.message)}
                         </p>
                 `;
 
@@ -2201,8 +2201,8 @@ function resetDatasetValidation() {
 // =========================================================
 
 function displayTrainingResult(result) {
-    const testMetrics = result.metrics?.test || result.metrics || {};
-    const validationMetrics = result.metrics?.validation || {};
+    const testMetrics = result.metrics?.test;
+    const validationMetrics = result.metrics?.validation;
 
     // =================================================
     // TEST METRICS
@@ -2229,7 +2229,7 @@ function displayTrainingResult(result) {
     metricValidationRows.textContent = result.validation_rows ?? "—";
     metricTestRows.textContent = result.test_rows ?? "—";
 
-    trainedModelName.textContent = result.model_name || "Trained model";
+    trainedModelName.textContent = result.model_name;
     trainingStatus.textContent = "✓ Training complete. Review the validation and test metrics, then save to accept this model.";
     trainingStatus.style.color = "var(--success)";
     trainingResults.classList.remove("hidden");
