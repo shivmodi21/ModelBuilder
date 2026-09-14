@@ -156,11 +156,7 @@ def delete_saved_model(model_id: str):
 
 @app.post("/api/analyze-dataset")
 async def analyze_training_dataset(csv_file: UploadFile = File(...),):
-
-    # -----------------------------------------------------
     # Validate file
-    # -----------------------------------------------------
-
     if not csv_file or not csv_file.filename:
         api_error(
             status_code=400,
@@ -176,10 +172,7 @@ async def analyze_training_dataset(csv_file: UploadFile = File(...),):
             message='Only CSV files are allowed.'
         )
 
-    # -----------------------------------------------------
     # Read CSV
-    # -----------------------------------------------------
-
     try:
         contents = await csv_file.read()
         dataframe = pd.read_csv(BytesIO(contents))
@@ -191,11 +184,7 @@ async def analyze_training_dataset(csv_file: UploadFile = File(...),):
             message=str(error)
         )
 
-
-    # -----------------------------------------------------
     # Analyze CSV
-    # -----------------------------------------------------
-
     try:
         analysis_result = analyze_dataset(dataframe)
     except ValueError as error:
@@ -214,11 +203,7 @@ async def analyze_training_dataset(csv_file: UploadFile = File(...),):
             message=str(error)
         )
 
-
-    # -----------------------------------------------------
     # Return raw analysis JSON
-    # -----------------------------------------------------
-
     return {
         "success": True,
         "filename": csv_file.filename,
@@ -239,11 +224,7 @@ async def validate_training_dataset(
     model_choice: str = Form(...),
     csv_file: UploadFile = File(...),
 ):
-
-    # -----------------------------------------------------
     # Validate file type
-    # -----------------------------------------------------
-
     if not csv_file or not csv_file.filename:
         api_error(
             status_code=400,
@@ -259,11 +240,7 @@ async def validate_training_dataset(
             message='Only CSV files are allowed.'
         )
 
-
-    # -----------------------------------------------------
     # Parse fields JSON
-    # -----------------------------------------------------
-
     try:
         fields_data = json.loads(fields)
     except json.JSONDecodeError:
@@ -274,11 +251,7 @@ async def validate_training_dataset(
             message="Invalid input field configuration for JSON."
         )
 
-
-    # -----------------------------------------------------
     # Read CSV
-    # -----------------------------------------------------
-
     try:
         contents = await csv_file.read()
         dataframe = pd.read_csv(BytesIO(contents))
@@ -290,10 +263,7 @@ async def validate_training_dataset(
             message=str(error)
         )
 
-    # -----------------------------------------------------
     # Validate configuration + dataset
-    # -----------------------------------------------------
-
     try:
         validation_result = validate_dataset(
             dataframe=dataframe,
@@ -317,9 +287,7 @@ async def validate_training_dataset(
             message=str(error)
         )
 
-    # -----------------------------------------------------
     # Return result
-    # -----------------------------------------------------
     return validation_result
 
 # =========================================================
@@ -335,11 +303,7 @@ async def train_endpoint(
     model_choice: str = Form(...),
     model_name: str = Form(...)
 ):
-
-    # -----------------------------------------------------
     # 1. Validate CSV file
-    # -----------------------------------------------------
-
     if not csv_file or not csv_file.filename:
         api_error(
             status_code=400,
@@ -355,11 +319,7 @@ async def train_endpoint(
             message='Only CSV files are allowed.'
         )
 
-
-    # -----------------------------------------------------
     # 2. Read CSV
-    # -----------------------------------------------------
-
     try:
         contents = await csv_file.read()
         dataframe = pd.read_csv(BytesIO(contents))
@@ -371,11 +331,7 @@ async def train_endpoint(
             message=str(error)
         )
 
-
-    # -----------------------------------------------------
     # 3. Parse user-defined fields
-    # -----------------------------------------------------
-
     try:
         fields_data = json.loads(fields)
     except json.JSONDecodeError:
@@ -386,7 +342,6 @@ async def train_endpoint(
             message="Invalid input field configuration for JSON."
         )
 
-
     if not isinstance(fields_data, list):
         api_error(
             status_code=400,
@@ -395,11 +350,7 @@ async def train_endpoint(
             message="Input fields must be a list."
         )
 
-
-    # -----------------------------------------------------
     # 4. Validate dataset
-    # -----------------------------------------------------
-
     try:
         validation_result = validate_dataset(
             dataframe=dataframe,
@@ -418,7 +369,6 @@ async def train_endpoint(
             message=str(error)
         )
 
-    # -----------------------------------------------------
     # 5. Get enriched fields
     #
     # These now contain:
@@ -426,12 +376,10 @@ async def train_endpoint(
     #   nature
     #   feature_engineering
     #   options (categorical)
-    # -----------------------------------------------------
     enriched_fields = validation_result["input_fields"]
 
-    # -----------------------------------------------------
+
     # 6. Train model
-    # -----------------------------------------------------
     try:
         training_result = train_model(
             dataframe=dataframe,
@@ -492,10 +440,8 @@ async def train_endpoint(
 
 @app.post("/api/save-model")
 async def save_model_endpoint(training_id: str = Form(...),):
-    # -----------------------------------------------------
-    # Check training session
-    # -----------------------------------------------------
 
+    # Check training session
     if training_id not in trained_models:
         api_error(
             status_code=404,
@@ -506,9 +452,7 @@ async def save_model_endpoint(training_id: str = Form(...),):
 
     training = trained_models[training_id]
 
-    # -----------------------------------------------------
     # Create model ID
-    # -----------------------------------------------------
     try:
         model_id = create_model_id(training["model_name"])
     except ValueError as error:
@@ -519,9 +463,7 @@ async def save_model_endpoint(training_id: str = Form(...),):
             message=str(error)
         )
 
-    # -----------------------------------------------------
     # Save model
-    # -----------------------------------------------------
     try:
         model_path = save_trained_model(model=training["model"], model_id=model_id,)
     except FileExistsError as error:
@@ -539,10 +481,7 @@ async def save_model_endpoint(training_id: str = Form(...),):
             message=str(error)
         )
 
-    # -----------------------------------------------------
     # Save metadata
-    # -----------------------------------------------------
-
     try:
         metadata = create_metadata(
             model_name=training["model_name"],
@@ -583,14 +522,10 @@ async def save_model_endpoint(training_id: str = Form(...),):
             message=str(error)
         )
 
-    # -----------------------------------------------------
     # Remove temporary training object
-    # -----------------------------------------------------
     del trained_models[training_id]
 
-    # -----------------------------------------------------
     # Response
-    # -----------------------------------------------------
     return {
         "success": True,
         "message": "Model saved successfully.",
@@ -604,10 +539,7 @@ async def save_model_endpoint(training_id: str = Form(...),):
 
 @app.post("/api/predict")
 async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...),):
-    # -----------------------------------------------------
     # Get model metadata
-    # -----------------------------------------------------
-
     metadata = get_metadata(model_id)
 
     if metadata is None:
@@ -618,10 +550,7 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
             message=f"Model '{model_id}' was not found."
         )
 
-    # -----------------------------------------------------
     # Parse input JSON
-    # -----------------------------------------------------
-
     try:
         user_data = json.loads(input_data)
     except json.JSONDecodeError:
@@ -631,11 +560,8 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
             title='Invalid Input Field',
             message="Invalid input field configuration for JSON."
         )
-
-    # -----------------------------------------------------
+    
     # Validate fields
-    # -----------------------------------------------------
-
     expected_fields = [field["name"] for field in metadata.get("input_fields", [])]
     missing_fields = [field for field in expected_fields if field not in user_data]
 
@@ -650,17 +576,10 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
             }
         )
 
-
-    # -----------------------------------------------------
     # Collect expected fields
-    # -----------------------------------------------------
-
     model_input = {field: user_data[field] for field in expected_fields}
 
-    # -----------------------------------------------------
     # Load model
-    # -----------------------------------------------------
-
     try:
         model_path = get_model_path(model_id)
         model = load_saved_model(model_path)
@@ -679,10 +598,7 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
             message=str(error)
         )
 
-    # -----------------------------------------------------
     # Prepare input according to model metadata
-    # -----------------------------------------------------
-
     try:
         dataframe = pd.DataFrame([input_data])
     except Exception as error:
@@ -693,9 +609,7 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
             message=str(error)
         )
 
-    # -----------------------------------------------------
     # Predict
-    # -----------------------------------------------------
     try:
         result = predict(model, dataframe)
     except Exception as error:
@@ -706,23 +620,17 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
             message=str(error)
         )
 
-    # -----------------------------------------------------
     # Response
-    # -----------------------------------------------------
-
     return {
         "success": True,
         "model_id": model_id,
         "model_name": metadata.get("model_name", model_id),
         "prediction": result["prediction"],
-        "probabilities": result.get("probabilities"),
+        "probabilities": result.get("probabilities", {}),
     }
 
 
-# ---------------------------------------------------------
 # Serve frontend
-# ---------------------------------------------------------
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
 
