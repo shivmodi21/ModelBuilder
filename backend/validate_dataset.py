@@ -375,7 +375,7 @@ def validate_missing_value_strategy(dataframe: pd.DataFrame, field: dict):
         "strategy": strategy_config,
         "missing_count": missing_count,
         "applied": True,
-        "replacement_value": (str(replacement) if nature == "Categorical" else float(replacement)),
+        "replacement_value": str(replacement),
         "remaining_missing": int(temporary_series.isna().sum())
     }
 
@@ -1042,7 +1042,7 @@ def validate_all_numerical_fields(dataframe: pd.DataFrame, fields: list):
             status_code=400,
             code='INVALID_NUMERICAL_VALUES',
             title='Invalid Numerical Values',
-            message="Following Numerical fields contain non-numeric values. Change their data type to Categorical or correct the source data."
+            message="Following Numerical fields contain non-numeric values. Change their data type to Categorical or correct the source data.",
             details=[
                 {
                     "invalid_fields": invalid_fields
