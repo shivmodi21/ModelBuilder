@@ -798,8 +798,8 @@ def validate_target_column(target_column, fields):
     if not target_column:
         api_error(
             status_code=400,
-            code='MISSING_TARGET_COLUMN',
-            title='Missing Target Column',
+            code='TARGET_COLUMN_REQUIRED',
+            title='Target Column Required',
             message='Target column name is required.'
         )
 
@@ -816,8 +816,8 @@ def validate_target_column(target_column, fields):
     if target_column.lower() in input_names:
         api_error(
             status_code=400,
-            code='TARGET_COLUMN_IN_INPUT_FIELD',
-            title='Target Column in Input Fields',
+            code='TARGET_INPUT_CONFLICT',
+            title='Target Column present in Input Fields',
             message=f"Target column '{target_column}' cannot also be an input field."
         )
 
@@ -843,7 +843,7 @@ def validate_csv_columns(dataframe, fields, target_column):
     if missing_columns:
         api_error(
             status_code=400,
-            code='MISSING_COLUMNS',
+            code='MISSING_DATASET_COLUMNS',
             title='Missing Required Columns',
             message='Following Columns are Missing in Dataset: ',
             details=[
@@ -940,7 +940,7 @@ def validate_target_data(dataframe, target_column):
     if target.isna().any():
         api_error(
             status_code=400,
-            code='MISSING_VALUES_IN_TARGET_COLUMN',
+            code='INVALID_TARGET_DATA',
             title='Missing Values in Target Column',
             message=f"Target column '{target_column}' contains missing values."
         )
@@ -951,8 +951,8 @@ def validate_target_data(dataframe, target_column):
     if pd.api.types.is_numeric_dtype(target) and len(unique_classes) != 2:
         api_error(
             status_code=400,
-            code='NUMERIC_TARGET_COLUMN',
-            title='Numeric Target Column',
+            code='INVALID_TARGET_TYPE',
+            title='Invalid Target Column Type: Numerical',
             message=f"Target column '{target_column}' must be categorical and having 2 classes.",
             details=[
                 {
@@ -964,7 +964,7 @@ def validate_target_data(dataframe, target_column):
     if len(unique_classes) != 2:
         api_error(
             status_code=400,
-            code='NON_BINARY_TARGET_COLUMN',
+            code='INVALID_TARGET_CLASSES',
             title='Multiclass Target Column',
             message=f"Target column '{target_column}' must contain exactly two classes.",
             details=[
@@ -1002,8 +1002,8 @@ def positive_class_validation(positive_class, target_classes):
     if positive_class not in target_classes:
         api_error(
             status_code=400,
-            code='MISSING_POSITIVE_CLASS',
-            title='Missing Positive Class',
+            code='INVALID_POSITIVE_CLASS',
+            title='Invalid Positive Class',
             message=f"Positive Class '{positive_class}' is missing in following target classes: ",
             details=[
                 {

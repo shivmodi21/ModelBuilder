@@ -123,7 +123,7 @@ def get_model(model_id: str):
             status_code=404,
             code='MODEL_NOT_FOUND',
             title='Model Not Found',
-            message=f"Model '{model_id}' was not found."
+            message=f"Model '{model_id}' could not be found."
         )
 
     return metadata
@@ -142,7 +142,7 @@ def delete_saved_model(model_id: str):
             status_code=404,
             code='MODEL_NOT_FOUND',
             title='Model Not Found',
-            message=f"Model '{model_id}' was not found."
+            message=f"Model '{model_id}' could not be found."
         )
 
     return {
@@ -161,15 +161,15 @@ async def analyze_training_dataset(csv_file: UploadFile = File(...),):
         api_error(
             status_code=400,
             code='CSV_NOT_UPLOADED',
-            title='CSV Not Uploaded',
-            message="No CSV file was provided."
+            title="CSV File Required",
+            message="Upload a CSV file to continue.",
         )
     elif not csv_file.filename.lower().endswith(".csv"):
         api_error(
             status_code=400,
-            code='NOT_CSV_FILE',
-            title='Not CSV File',
-            message='Only CSV files are allowed.'
+            code='INVALID_FILE_TYPE',
+            title="Invalid File Type",
+            message="Upload a CSV file. The selected file is not a CSV file.",
         )
 
     # Read CSV
@@ -179,8 +179,8 @@ async def analyze_training_dataset(csv_file: UploadFile = File(...),):
     except Exception as error:
         api_error(
             status_code=400,
-            code='CSV_READING_FAILED',
-            title='Unable to read CSV file',
+            code="CSV_READ_FAILED",
+            title="Unable to Read CSV",
             message=str(error)
         )
 
@@ -190,16 +190,16 @@ async def analyze_training_dataset(csv_file: UploadFile = File(...),):
     except ValueError as error:
         api_error(
             status_code=400,
-            code='VALUE_ERROR_IN_DATA_ANALYSIS',
-            title='Value Error Occured in Data Analysis',
+            code="CSV_READ_FAILED",
+            title="Unable to Read CSV",
             message=str(error)
         )
 
     except Exception as error:
         api_error(
             status_code=500,
-            code='DATA_ANALYSIS_FAILED',
-            title='Dataset Analysis Failed',
+            code="DATA_ANALYSIS_FAILED",
+            title="Dataset Analysis Failed",
             message=str(error)
         )
 
@@ -228,16 +228,16 @@ async def validate_training_dataset(
     if not csv_file or not csv_file.filename:
         api_error(
             status_code=400,
-            code='CSV_NOT_UPLOADED',
-            title='CSV Not Uploaded',
-            message="No CSV file was provided."
+            code="CSV_NOT_UPLOADED",
+            title="CSV File Required",
+            message="Upload a CSV file to continue."
         )
     elif not csv_file.filename.lower().endswith(".csv"):
         api_error(
             status_code=400,
-            code='NOT_CSV_FILE',
-            title='Not CSV File',
-            message='Only CSV files are allowed.'
+            code="INVALID_FILE_TYPE",
+            title="Invalid File Type",
+            message="Upload a CSV file. The selected file is not a CSV file."
         )
 
     # Parse fields JSON
@@ -246,9 +246,9 @@ async def validate_training_dataset(
     except json.JSONDecodeError:
         api_error(
             status_code=400,
-            code='INVALID_INPUT_FIELD',
-            title='Invalid Input Field',
-            message="Invalid input field configuration for JSON."
+            code="INVALID_FIELDS_JSON",
+            title="Invalid Input Configuration",
+            message="The input field configuration could not be read.",
         )
 
     # Read CSV
@@ -258,8 +258,8 @@ async def validate_training_dataset(
     except Exception as error:
         api_error(
             status_code=400,
-            code='CSV_READING_FAILED',
-            title='Unable to read CSV file',
+            code="CSV_READ_FAILED",
+            title="Unable to Read CSV",
             message=str(error)
         )
 
@@ -283,7 +283,7 @@ async def validate_training_dataset(
         api_error(
             status_code=500,
             code='DATA_VALIDATION_FAILED',
-            title='Dataset Analysis Failed',
+            title='Dataset Validation Failed',
             message=str(error)
         )
 
@@ -307,16 +307,16 @@ async def train_endpoint(
     if not csv_file or not csv_file.filename:
         api_error(
             status_code=400,
-            code='CSV_NOT_UPLOADED',
-            title='CSV Not Uploaded',
-            message="No CSV file was provided."
+            code="CSV_NOT_UPLOADED",
+            title="CSV File Required",
+            message="Upload a CSV file to continue."
         )
     elif not csv_file.filename.lower().endswith(".csv"):
         api_error(
             status_code=400,
-            code='NOT_CSV_FILE',
-            title='Not CSV File',
-            message='Only CSV files are allowed.'
+            code="INVALID_FILE_TYPE",
+            title="Invalid File Type",
+            message="Upload a CSV file. The selected file is not a CSV file."
         )
 
     # 2. Read CSV
@@ -326,8 +326,8 @@ async def train_endpoint(
     except Exception as error:
         api_error(
             status_code=400,
-            code='CSV_READING_FAILED',
-            title='Unable to read CSV file',
+            code="CSV_READ_FAILED",
+            title="Unable to Read CSV",
             message=str(error)
         )
 
@@ -337,17 +337,17 @@ async def train_endpoint(
     except json.JSONDecodeError:
         api_error(
             status_code=400,
-            code='INVALID_INPUT_FIELD',
-            title='Invalid Input Field',
-            message="Invalid input field configuration for JSON."
+            code="INVALID_FIELDS_JSON",
+            title="Invalid Input Configuration",
+            message="The input field configuration could not be read."
         )
 
     if not isinstance(fields_data, list):
         api_error(
             status_code=400,
-            code='INVALID_INPUT_FIELD',
-            title='Invalid Input Field',
-            message="Input fields must be a list."
+            code="INVALID_FIELDS_FORMAT",
+            title="Invalid Input Configuration",
+            message="The input field configuration must be provided as a list of fields."
         )
 
     # 4. Validate dataset
@@ -365,7 +365,7 @@ async def train_endpoint(
         api_error(
             status_code=500,
             code='DATA_VALIDATION_FAILED',
-            title='Dataset Analysis Failed',
+            title='Dataset Validation Failed',
             message=str(error)
         )
 
@@ -394,8 +394,8 @@ async def train_endpoint(
     except ValueError as error:
         api_error(
             status_code=400,
-            code='VALUE_ERROR_IN_TRAINING',
-            title='Value Error Occured During Training',
+            code="TRAINING_INPUT_INVALID",
+            title="Training Could Not Start",
             message=str(error)
         )
 
@@ -447,7 +447,7 @@ async def save_model_endpoint(training_id: str = Form(...),):
             status_code=404,
             code='TRAINING_SESSION_NOT_FOUND',
             title='Training Session Not Found',
-            message="Training session was not found or has already been saved."
+            message="The temporary training session is no longer available. Train the model again before saving it"
         )
 
     training = trained_models[training_id]
@@ -458,8 +458,8 @@ async def save_model_endpoint(training_id: str = Form(...),):
     except ValueError as error:
         api_error(
             status_code=400,
-            code='VALUE_ERROR_IN_MODEL_ID_CREATION',
-            title='Value Error Occured in Model ID Creation',
+            code="MODEL_NAME_INVALID",
+            title="Invalid Model Name",
             message=str(error)
         )
 
@@ -469,15 +469,15 @@ async def save_model_endpoint(training_id: str = Form(...),):
     except FileExistsError as error:
         api_error(
             status_code=409,
-            code='FILE_EXISTS_ERROR',
-            title='Model Already Exists',
+            code="MODEL_ALREADY_EXISTS",
+            title="Model Already Exists",
             message=str(error)
         )
     except Exception as error:
         api_error(
             status_code=500,
-            code='MODEL_STORING_FAILED',
-            title='Unable to save model',
+            code="MODEL_SAVE_FAILED",
+            title="Unable to Save Model",
             message=str(error)
         )
 
@@ -497,9 +497,9 @@ async def save_model_endpoint(training_id: str = Form(...),):
     except ValueError as error:
         api_error(
             status_code=400,
-            code='VALUE_ERROR_IN_METADATA_CREATION',
-            title='Value Error Occured in Metadata Creation',
-            message=str(error)
+            code="MODEL_METADATA_INVALID",
+            title="Invalid Model Metadata",
+            message=str(error),
         )
     except FileExistsError as error:
         # If metadata already exists but the model was
@@ -510,15 +510,15 @@ async def save_model_endpoint(training_id: str = Form(...),):
 
         api_error(
             status_code=409,
-            code='FILE_EXISTS_ERROR',
-            title='Metadata Already Exists',
+            code="MODEL_METADATA_ALREADY_EXISTS",
+            title="Model Metadata Already Exists",
             message=str(error)
         )
     except Exception as error:
         api_error(
             status_code=500,
-            code='METADATA_STORING_FAILED',
-            title='Unable to save metadata',
+            code="MODEL_METADATA_SAVE_FAILED",
+            title="Unable to Save Model Metadata",
             message=str(error)
         )
 
@@ -545,9 +545,9 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
     if metadata is None:
         api_error(
             status_code=404,
-            code='MODEL_NOT_FOUND',
-            title='Model Not Found',
-            message=f"Model '{model_id}' was not found."
+            code="MODEL_NOT_FOUND",
+            title="Model Not Found",
+            message=f"Model '{model_id}' could not be found. Select an available model and try again."
         )
 
     # Parse input JSON
@@ -556,9 +556,9 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
     except json.JSONDecodeError:
         api_error(
             status_code=400,
-            code='INVALID_INPUT_FIELD',
-            title='Invalid Input Field',
-            message="Invalid input field configuration for JSON."
+            code="INVALID_PREDICTION_INPUT",
+            title="Invalid Prediction Input",
+            message="The prediction input could not be read."
         )
     
     # Validate fields
@@ -568,12 +568,12 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
     if missing_fields:
         api_error(
             status_code=400,
-            code='MISSING_INPUT_FIELDS',
-            title='Missing Input Fields',
-            message='Following input fields are empty: ',
+            code="MISSING_PREDICTION_FIELDS",
+            title="Required Prediction Fields Missing",
+            message="Provide a value for all required prediction fields and try again.",
             details={
                 "missing_fields": missing_fields,
-            }
+            },
         )
 
     # Collect expected fields
@@ -586,14 +586,14 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
     except FileNotFoundError:
         api_error(
             status_code=404,
-            code='MODEL_FILE_NOT_FOUND',
-            title='Model File Not Found',
-            message='Model metadata exists, but the model file was not found.'
+            code="MODEL_FILE_NOT_FOUND",
+            title="Model File Missing",
+            message="The model record exists, but its model file could not be found. Retrain and save the model again."
         )
     except Exception as error:
         api_error(
             status_code=500,
-            code='MODEL_LOADING_FAILED',
+            code='MODEL_LOAD_FAILED',
             title='Unable to load model',
             message=str(error)
         )
@@ -603,9 +603,9 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
         dataframe = pd.DataFrame([input_data])
     except Exception as error:
         api_error(
-            status_code=500,
-            code='MODEL_INPUT_PREPARATION_FAILED',
-            title='Unable to prepare model input',
+            status_code=400,
+            code="PREDICTION_INPUT_PREPARATION_FAILED",
+            title="Invalid Prediction Input",
             message=str(error)
         )
 
@@ -616,7 +616,7 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
         api_error(
             status_code=500,
             code='MODEL_PREDICTION_FAILED',
-            title='Model Prediction Failed',
+            title='Prediction Failed',
             message=str(error)
         )
 
