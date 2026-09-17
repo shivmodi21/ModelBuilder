@@ -107,7 +107,8 @@ def validate_input_fields(fields):
             status_code=400,
             code="INPUT_FIELDS_REQUIRED",
             title="Input Fields Required",
-            message="At least one input field is required.",
+            message="Add at least one input field before validating the dataset.",
+            details=None,
         )
 
     names = []
@@ -119,7 +120,8 @@ def validate_input_fields(fields):
                 status_code=400,
                 code="INVALID_INPUT_FIELD",
                 title="Invalid Input Field",
-                message=(f"Invalid definition for input field {index + 1}."),
+                message=f"Input field {index + 1} has an invalid configuration.",
+                details=None,
             )
 
         # Field name
@@ -129,17 +131,19 @@ def validate_input_fields(fields):
             api_error(
                 status_code=400,
                 code="EMPTY_INPUT_FIELD",
-                title="Input Field is Empty",
-                message=(f"Input field {index + 1} cannot be empty."),
+                title="Input Field Name Required",
+                message=f"Enter a name for input field {index + 1}.",
+                details=None,
             )
 
         # Comma
         if "," in name:
             api_error(
                 status_code=400,
-                code="INVALID_NAME_FIELD",
-                title="Invalid Field Name",
-                message=(f"Input field '{name}' cannot contain a comma.")
+                code="INVALID_INPUT_FIELD_NAME",
+                title="Invalid Input Field Name",
+                message=f"Input field '{name}' cannot contain a comma. Choose a field name without commas.",
+                details=None,
             )
 
         # Nature
@@ -149,23 +153,22 @@ def validate_input_fields(fields):
             api_error(
                 status_code=400,
                 code="INVALID_FIELD_NATURE",
-                title="Invalid Field Nature",
-                message=(f"Invalid nature for input field '{name}'."),
-                details=[
-                    {
-                        "field": name,
-                        "allowed": SUPPORTED_FIELD_TYPES,
-                    }
-                ],
+                title="Invalid Field Type",
+                message=f"Input field '{name}' has an unsupported field type. Select Numerical or Categorical.",
+                details={
+                    "field": name,
+                    "allowed_values": sorted(SUPPORTED_FIELD_TYPES),
+                },
             )
 
         # Duplicate names
         if name.lower() in [existing.lower() for existing in names]:
             api_error(
                 status_code=400,
-                code='DUPLICATE_INPUT_FIELD',
-                title='Duplicate Input Field',
-                message=(f"Duplicate input field: '{name}'.")
+                code="DUPLICATE_INPUT_FIELD",
+                title="Duplicate Input Field",
+                message=f"Input field '{name}' is selected more than once. Remove the duplicate field.",
+                details=None,
             )
 
         names.append(name)
@@ -176,9 +179,10 @@ def validate_input_fields(fields):
         if not isinstance(feature_engineering, dict):
             api_error(
                 status_code=400,
-                code='INVALID_FEATURE_ENGINEERING',
-                title='Invalid Feature Engineering Config',
-                message=(f"Invalid feature engineering configuration for '{name}'.")
+                code="INVALID_FEATURE_ENGINEERING",
+                title="Invalid Feature Engineering Configuration",
+                message=f"The feature engineering configuration for '{name}' is invalid.",
+                details=None,
             )
 
         engineering_type = (feature_engineering.get("type", "not_found"))
@@ -186,23 +190,24 @@ def validate_input_fields(fields):
         if (engineering_type not in ALLOWED_FEATURE_ENGINEERING):
             api_error(
                 status_code=400,
-                code='UNSUPPORTED_FEATURE_ENGINEERING',
-                title='Unsupported Feature Engineering',
-                message=(f"Unsupported feature engineering '{engineering_type}' for field '{name}'."),
-                details=[
-                    {
-                        "allowed": ALLOWED_FEATURE_ENGINEERING,
-                    }
-                ],
+                code="UNSUPPORTED_FEATURE_ENGINEERING",
+                title="Unsupported Feature Engineering",
+                message=f"Feature engineering '{engineering_type}' is not supported for field '{name}'. Select a supported operation.",
+                details={
+                    "field": name,
+                    "selected": engineering_type,
+                    "allowed_values": sorted(ALLOWED_FEATURE_ENGINEERING),
+                },
             )
 
         # Feature engineering only for numerical
         if (nature == "Categorical" and engineering_type != "none"):
             api_error(
                 status_code=400,
-                code='INVALID_FEATURE_ENGINEERING_NATURE',
-                title='Invalid Categorical Field Feature Engineering',
-                message=(f"Feature engineering '{engineering_type}' cannot be applied to categorical field '{name}'.")
+                code="INVALID_FEATURE_ENGINEERING_NATURE",
+                title="Feature Engineering Not Supported",
+                message=f"Feature engineering '{engineering_type}' cannot be applied to categorical field '{name}'. Set feature engineering to None or change the field type to Numerical.",
+                details=None,
             )
 
         # Numerical scaling
@@ -212,9 +217,10 @@ def validate_input_fields(fields):
             if not isinstance(scaling, dict):
                 api_error(
                     status_code=400,
-                    code='INVALID_SCALING',
-                    title='Invalid Scaling Config',
-                    message=f"Invalid scaling configuration for field '{name}'.",
+                    code="INVALID_SCALING",
+                    title="Invalid Scaling Configuration",
+                    message=f"The scaling configuration for field '{name}' is invalid.",
+                    details=None,
                 )
 
             scaling_type = (scaling.get("type", "not_found"))
@@ -222,14 +228,14 @@ def validate_input_fields(fields):
             if (scaling_type not in ALLOWED_SCALING):
                 api_error(
                     status_code=400,
-                    code='UNSUPPORTED_SCALING',
-                    title='Unsupported Scaling',
-                    message=f"Unsupported scaling '{scaling_type}' for field '{name}'.",
-                    details=[
-                        {
-                            "allowed": ALLOWED_SCALING,
-                        }
-                    ],
+                    code="UNSUPPORTED_SCALING",
+                    title="Unsupported Scaling",
+                    message=f"Scaling method '{scaling_type}' is not supported for field '{name}'. Select a supported scaling method.",
+                    details={
+                        "field": name,
+                        "selected": scaling_type,
+                        "allowed_values": sorted(ALLOWED_SCALING),
+                    },
                 )
 
         # Categorical encoding
@@ -239,9 +245,10 @@ def validate_input_fields(fields):
             if not isinstance(encoding, dict):
                 api_error(
                     status_code=400,
-                    code='INVALID_ENCODING',
-                    title='Invalid Encoding Config',
-                    message=f"Invalid encoding configuration for field '{name}'.",
+                    code="INVALID_ENCODING",
+                    title="Invalid Encoding Configuration",
+                    message=f"The encoding configuration for field '{name}' is invalid.",
+                    details=None,
                 )
 
             encoding_type = (encoding.get("type", "not_found"))
@@ -249,14 +256,14 @@ def validate_input_fields(fields):
             if (encoding_type not in ALLOWED_ENCODING):
                 api_error(
                     status_code=400,
-                    code='UNSUPPORTED_ENCODING',
-                    title='Unsupported Encoding',
-                    message=f"Unsupported encoding '{encoding_type}' for field '{name}'.",
-                    details=[
-                        {
-                            "allowed": ALLOWED_ENCODING,
-                        }
-                    ],
+                    code="UNSUPPORTED_ENCODING",
+                    title="Unsupported Encoding",
+                    message=f"Encoding method '{encoding_type}' is not supported for field '{name}'. Select a supported encoding method.",
+                    details={
+                        "field": name,
+                        "selected": encoding_type,
+                        "allowed_values": sorted(ALLOWED_ENCODING),
+                    },
                 )
 
     return fields
@@ -280,9 +287,10 @@ def validate_missing_value_strategy(dataframe: pd.DataFrame, field: dict):
     if not isinstance(strategy_config, str):
         api_error(
             status_code=400,
-            code='INVALID_MISSING_VALUE_STRATEGY',
-            title='Invalid Missing Value Strategy Config',
-            message=f"Invalid missing-value strategy configuration for field '{field_name}'.",
+            code="INVALID_MISSING_VALUE_STRATEGY",
+            title="Invalid Missing Value Strategy Configuration",
+            message=f"The missing-value strategy for field '{field_name}' is invalid.",
+            details=None,
         )
 
     if nature == "Numerical":
@@ -293,14 +301,14 @@ def validate_missing_value_strategy(dataframe: pd.DataFrame, field: dict):
     if strategy_config not in allowed_strategies:
         api_error(
             status_code=400,
-            code='UNSUPPORTED_MISSING_VALUE_STRATEGY',
-            title='Unsupported Missing Value Strategy',
-            message=f"Unsupported missing-value strategy '{strategy_config}' for field '{field_name}'.",
-            details=[
-                {
-                    "allowed": sorted(allowed_strategies),
-                }
-            ],
+            code="UNSUPPORTED_MISSING_VALUE_STRATEGY",
+            title="Unsupported Missing Value Strategy",
+            message=f"Missing-value strategy '{strategy_config}' is not supported for {nature.lower()} field '{field_name}'. Select a supported strategy.",
+            details={
+                "field": field_name,
+                "selected": strategy_config,
+                "allowed_values": sorted(allowed_strategies),
+            },
         )
 
     series = dataframe[field_name].copy()
@@ -333,9 +341,10 @@ def validate_missing_value_strategy(dataframe: pd.DataFrame, field: dict):
         if numeric_series.notna().sum() == 0:
             api_error(
                 status_code=400,
-                code='MISSING_VALUE_STRATEGY_FAILED',
-                title='Missing Value Strategy Failed',
-                message=f"'{field_name}' has no valid numerical values are available to calculate the selected imputation value.",
+                code="MISSING_VALUE_STRATEGY_FAILED",
+                title="Unable to Calculate Missing Values",
+                message=f"Field '{field_name}' contains no valid numerical values, so the selected imputation value cannot be calculated. Correct the data or choose a different missing-value strategy.",
+                details=None,
             )
 
         if strategy_config == "mean":
@@ -348,9 +357,10 @@ def validate_missing_value_strategy(dataframe: pd.DataFrame, field: dict):
         if replacement is None or pd.isna(replacement):
             api_error(
                 status_code=400,
-                code='MISSING_VALUE_STRATEGY_FAILED',
-                title='Missing Value Strategy Failed',
-                message=f"Unable to calculate {strategy_config} for '{field_name}' field.",
+                code="MISSING_VALUE_STRATEGY_FAILED",
+                title="Unable to Calculate Missing Values",
+                message=f"The '{strategy_config}' strategy could not calculate a replacement value for field '{field_name}'. Correct the data or choose a different missing-value strategy.",
+                details=None,
             )
 
         temporary_series = (numeric_series.fillna(replacement))
@@ -362,9 +372,10 @@ def validate_missing_value_strategy(dataframe: pd.DataFrame, field: dict):
         if mode_values.empty:
             api_error(
                 status_code=400,
-                code='MISSING_VALUE_STRATEGY_FAILED',
-                title='Missing Value Strategy Failed',
-                message=f"Unable to calculate mode for '{field_name}' field because the column contains no valid categorical values.",
+                code="MISSING_VALUE_STRATEGY_FAILED",
+                title="Unable to Calculate Missing Values",
+                message=f"The mode could not be calculated for categorical field '{field_name}' because it contains no valid categorical values. Correct the data or choose a different missing-value strategy.",
+                details=None,
             )
 
         replacement = mode_values.iloc[0]
@@ -471,15 +482,14 @@ def validate_feature_engineering_values(dataframe: pd.DataFrame, field: dict):
 
             api_error(
                 status_code=400,
-                code='INVALID_LOG_VALUES',
-                title='Invalid Log Values',
-                message=f"Log transformation requires all non-missing values in '{field_name}' to be greater than zero.",
-                details=[
-                    {
-                        "invalid_values": invalid_values[:20],
-                        "invalid_count": len(invalid_values)
-                    }
-                ]
+                code="INVALID_LOG_VALUES",
+                title="Invalid Log Transformation Values",
+                message=f"Log transformation requires all non-missing values in '{field_name}' to be greater than zero. Correct the invalid values or choose a different transformation.",
+                details={
+                    "field": field_name,
+                    "invalid_values": invalid_values[:20],
+                    "invalid_count": len(invalid_values),
+                },
             )
 
         transformed = np.log(valid_values)
@@ -492,15 +502,14 @@ def validate_feature_engineering_values(dataframe: pd.DataFrame, field: dict):
             invalid_values = valid_values[invalid_mask].tolist()
             api_error(
                 status_code=400,
-                code='INVALID_LOG1P_VALUES',
-                title='Invalid Log1p Values',
-                message=f"Log1p transformation requires all non-missing values in '{field_name}' to be greater than -1.",
-                details=[
-                    {
-                        "invalid_values": invalid_values[:20],
-                        "invalid_count": len(invalid_values)
-                    }
-                ]
+                code="INVALID_LOG1P_VALUES",
+                title="Invalid Log1p Transformation Values",
+                message=f"Log1p transformation requires all non-missing values in '{field_name}' to be greater than -1. Correct the invalid values or choose a different transformation.",
+                details={
+                    "field": field_name,
+                    "invalid_values": invalid_values[:20],
+                    "invalid_count": len(invalid_values),
+                },
             )
 
         transformed = np.log1p(valid_values)
@@ -513,15 +522,14 @@ def validate_feature_engineering_values(dataframe: pd.DataFrame, field: dict):
             invalid_values = valid_values[invalid_mask].tolist()
             api_error(
                 status_code=400,
-                code='INVALID_SQRT_VALUES',
-                title='Invalid Sqroot Values',
-                message=f"Square-root transformation requires all non-missing values in '{field_name}' to be greater than or equal to zero.",
-                details=[
-                    {
-                        "invalid_values": invalid_values[:20],
-                        "invalid_count": len(invalid_values)
-                    }
-                ]
+                code="INVALID_SQRT_VALUES",
+                title="Invalid Square-Root Transformation Values",
+                message=f"Square-root transformation requires all non-missing values in '{field_name}' to be zero or greater. Correct the invalid values or choose a different transformation.",
+                details={
+                    "field": field_name,
+                    "invalid_values": invalid_values[:20],
+                    "invalid_count": len(invalid_values),
+                },
             )
 
         transformed = np.sqrt(valid_values)
@@ -533,23 +541,27 @@ def validate_feature_engineering_values(dataframe: pd.DataFrame, field: dict):
     else:
         api_error(
             status_code=400,
-            code='UNSUPPORTED_FEATURE_ENGINEERING',
-            title='Unsupported Feature Engineering',
-            message=(f"Unsupported feature engineering '{transformation}' for field '{field_name}'."),
-            details=[
-                {
-                    "allowed": ALLOWED_FEATURE_ENGINEERING,
-                }
-            ],
+            code="UNSUPPORTED_FEATURE_ENGINEERING",
+            title="Unsupported Feature Engineering",
+            message=f"Feature engineering '{transformation}' is not supported for field '{field_name}'. Select a supported transformation.",
+            details={
+                "field": field_name,
+                "selected": transformation,
+                "allowed_values": sorted(ALLOWED_FEATURE_ENGINEERING),
+            },
         )
 
     # Check generated values
     if not np.isfinite(transformed).all():
         api_error(
             status_code=400,
-            code='INVALID_TRANSFORMED_VALUES',
-            title='Invalid Transformed Values',
-            message=(f"The '{transformation}' transformation cannot be applied to field '{field_name}' because it produced invalid values."),
+            code="INVALID_TRANSFORMED_VALUES",
+            title="Invalid Transformed Values",
+            message=f"The '{transformation}' transformation produced invalid values for field '{field_name}'. Correct the source values or choose a different transformation.",
+            details={
+                "field": field_name,
+                "transformation": transformation,
+            },
         )
 
     return {
@@ -601,10 +613,11 @@ def validate_scaling(dataframe: pd.DataFrame, field: dict):
     if len(values) == 0:
         api_error(
             status_code=400,
-            code='SCALING_FAILED',
-            title='Scaling Failed',
-            message=f"Scaling type '{scaling_type}' failed for field '{field_name}' because no valid numerical values are available for scaling."
-        )  
+            code="SCALING_FAILED",
+            title="Unable to Apply Scaling",
+            message=f"Scaling method '{scaling_type}' cannot be applied to field '{field_name}' because no valid numerical values are available. Correct the data or choose a different scaling method.",
+            details=None,
+        )
 
     if scaling_type == "standardization":
         scaler = StandardScaler()
@@ -621,14 +634,14 @@ def validate_scaling(dataframe: pd.DataFrame, field: dict):
     else:
         api_error(
             status_code=400,
-            code='UNSUPPORTED_SCALING',
-            title='Unsupported Scaling',
-            message=f"Unsupported scaling '{scaling_type}' for field '{field_name}'.",
-            details=[
-                {
-                    "allowed": ALLOWED_SCALING,
-                }
-            ],
+            code="UNSUPPORTED_SCALING",
+            title="Unsupported Scaling",
+            message=f"Scaling method '{scaling_type}' is not supported for field '{field_name}'. Select a supported scaling method.",
+            details={
+                "field": field_name,
+                "selected": scaling_type,
+                "allowed_values": sorted(ALLOWED_SCALING),
+            },
         )
 
     try:
@@ -636,17 +649,25 @@ def validate_scaling(dataframe: pd.DataFrame, field: dict):
     except Exception as error:
         api_error(
             status_code=400,
-            code='SCALING_FAILED',
-            title=f"Scaling type '{scaling_type}' failed for field '{field_name}'",
-            message=str(error)
+            code="SCALING_FAILED",
+            title="Unable to Apply Scaling",
+            message=str(error),
+            details={
+                "field": field_name,
+                "scaling": scaling_type,
+            },
         )
 
     if not np.isfinite(transformed).all():
         api_error(
             status_code=400,
-            code='INVALID_SCALED_VALUES',
-            title='Invalid Scaled Values',
-            message=(f"The '{scaling_type}' scaling cannot be applied to field '{field_name}' because it produced invalid values."),
+            code="INVALID_SCALED_VALUES",
+            title="Invalid Scaled Values",
+            message=f"Scaling method '{scaling_type}' produced invalid values for field '{field_name}'. Correct the source data or choose a different scaling method.",
+            details={
+                "field": field_name,
+                "scaling": scaling_type,
+            },
         )
 
     return {
@@ -798,17 +819,19 @@ def validate_target_column(target_column, fields):
     if not target_column:
         api_error(
             status_code=400,
-            code='TARGET_COLUMN_REQUIRED',
-            title='Target Column Required',
-            message='Target column name is required.'
+            code="TARGET_COLUMN_REQUIRED",
+            title="Target Column Required",
+            message="Select a target column before validating the dataset.",
+            details=None,
         )
 
     if "," in target_column:
         api_error(
             status_code=400,
-            code='INVALID_TARGET_COLUMN',
-            title='Invalid Target Column',
-            message='Target column cannot contain a comma.'
+            code="INVALID_TARGET_COLUMN",
+            title="Invalid Target Column",
+            message="The target column name cannot contain a comma. Enter a valid column name.",
+            details=None,
         )
 
     input_names = [field["name"].strip().lower() for field in fields]
@@ -816,9 +839,10 @@ def validate_target_column(target_column, fields):
     if target_column.lower() in input_names:
         api_error(
             status_code=400,
-            code='TARGET_INPUT_CONFLICT',
-            title='Target Column present in Input Fields',
-            message=f"Target column '{target_column}' cannot also be an input field."
+            code="TARGET_INPUT_CONFLICT",
+            title="Target Column Used as Input",
+            message=f"Target column '{target_column}' is also selected as an input field. Remove it from the input fields or choose a different target column.",
+            details=None,
         )
 
     return target_column
@@ -843,23 +867,22 @@ def validate_csv_columns(dataframe, fields, target_column):
     if missing_columns:
         api_error(
             status_code=400,
-            code='MISSING_DATASET_COLUMNS',
-            title='Missing Required Columns',
-            message='Following Columns are Missing in Dataset: ',
-            details=[
-                {
-                    "missing_columns": missing_columns
-                }
-            ]
+            code="MISSING_DATASET_COLUMNS",
+            title="Required Columns Missing",
+            message="One or more selected input fields are not present in the CSV. Add the missing columns or update the input field selection.",
+            details={
+                "missing_columns": missing_columns,
+            },
         )
 
     # Target column
     if target_column not in dataframe.columns:
         api_error(
             status_code=400,
-            code='MISSING_TARGET_COLUMN',
-            title='Missing Target Column',
-            message=f"Target Column '{target_column}' is missing in Dataset.",
+            code="MISSING_TARGET_COLUMN",
+            title="Target Column Missing",
+            message=f"Target column '{target_column}' is not present in the CSV. Select an existing CSV column as the target.",
+            details=None,
         )
 
     return {
@@ -915,9 +938,10 @@ def validate_dataset_size(dataframe):
     if dataframe.empty:
         api_error(
             status_code=400,
-            code='EMPTY_DATASET',
-            title='Empty Dataset',
-            message="The CSV file contains no rows."
+            code="EMPTY_DATASET",
+            title="Dataset is Empty",
+            message="The CSV contains no data rows. Add at least one data row and try again.",
+            details=None,
         )
 
 
@@ -940,9 +964,10 @@ def validate_target_data(dataframe, target_column):
     if target.isna().any():
         api_error(
             status_code=400,
-            code='INVALID_TARGET_DATA',
-            title='Missing Values in Target Column',
-            message=f"Target column '{target_column}' contains missing values."
+            code="INVALID_TARGET_DATA",
+            title="Missing Target Values",
+            message=f"Target column '{target_column}' contains missing values. Fill in the missing target values or remove those rows before training.",
+            details=None,
         )
 
     # Classes
@@ -951,28 +976,27 @@ def validate_target_data(dataframe, target_column):
     if pd.api.types.is_numeric_dtype(target) and len(unique_classes) != 2:
         api_error(
             status_code=400,
-            code='INVALID_TARGET_TYPE',
-            title='Invalid Target Column Type: Numerical',
-            message=f"Target column '{target_column}' must be categorical and having 2 classes.",
-            details=[
-                {
-                    "number_of_classes": len(unique_classes),
-                }
-            ]
+            code="INVALID_TARGET_TYPE",
+            title="Invalid Target Type",
+            message=f"Target column '{target_column}' is Numerical, but the current classifier requires a categorical target with exactly two classes. Change the target to a categorical field or select a target with two classes.",
+            details={
+                "field": target_column,
+                "number_of_classes": len(unique_classes),
+                "classes": [str(value) for value in unique_classes],
+            },
         )
 
     if len(unique_classes) != 2:
         api_error(
             status_code=400,
-            code='INVALID_TARGET_CLASSES',
-            title='Multiclass Target Column',
-            message=f"Target column '{target_column}' must contain exactly two classes.",
-            details=[
-                {
-                    "number_of_classes": len(unique_classes),
-                    "classes": [str(value) for value in unique_classes]
-                }
-            ]
+            code="INVALID_TARGET_CLASSES",
+            title="Invalid Target Classes",
+            message=f"Target column '{target_column}' must contain exactly two classes for binary classification. Review the target values and select a target with two classes.",
+            details={
+                "field": target_column,
+                "number_of_classes": len(unique_classes),
+                "classes": [str(value) for value in unique_classes],
+            },
         )
 
     return [value for value in unique_classes]
@@ -1002,14 +1026,13 @@ def positive_class_validation(positive_class, target_classes):
     if positive_class not in target_classes:
         api_error(
             status_code=400,
-            code='INVALID_POSITIVE_CLASS',
-            title='Invalid Positive Class',
-            message=f"Positive Class '{positive_class}' is missing in following target classes: ",
-            details=[
-                {
-                    "target_classes": target_classes
-                }
-            ]
+            code="INVALID_POSITIVE_CLASS",
+            title="Invalid Positive Class",
+            message=f"Selected positive class '{positive_class}' is not one of the target classes. Select one of the available target classes as the positive class.",
+            details={
+                "selected": str(positive_class),
+                "target_classes": [str(value) for value in target_classes],
+            },
         )
 
 def get_invalid_numerical_values(series: pd.Series):

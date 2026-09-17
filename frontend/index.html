@@ -74,12 +74,18 @@
                 </div>
 
                 <div
-                    id="models-container"
-                    class="models-container"
-                >
-                    <div class="models-loading">
-                        Loading models...
-                    </div>
+                    id="models-status"
+                    class="task-status hidden">
+                </div>
+
+                <div
+                    id="models-result"
+                    class="models-result hidden">
+                </div>
+
+                <div
+                    id="models-error"
+                    class="task-error-container hidden">
                 </div>
 
                 <!-- Dynamic prediction area -->
@@ -140,6 +146,11 @@
                     <!-- Prediction result -->
 
                     <div
+                        id="prediction-status"
+                        class="task-status hidden">
+                    </div>
+
+                    <div
                         id="prediction-result"
                         class="prediction-result hidden">
 
@@ -157,6 +168,10 @@
 
                     </div>
 
+                    <div
+                        id="prediction-error"
+                        class="task-error-container hidden">
+                    </div>
                 </div>
 
             </section>
@@ -364,12 +379,17 @@
 
                     <div
                         id="dataset-analysis-status"
-                        class="dataset-analysis-status hidden">
+                        class="task-status hidden">
                     </div>
 
                     <div
-                        id="dataset-error"
-                        class="validation-message error">
+                        id="dataset-analysis-result"
+                        class="dataset-analysis-result hidden">
+                    </div>
+
+                    <div
+                        id="dataset-analysis-error"
+                        class="task-error-container hidden">
                     </div>
 
                 </div>
@@ -580,16 +600,22 @@
                      STEP 6 — VALIDATION / TRAINING
                 =================================== -->
                 <div
-                    id="dataset-validation-report"
-                    class="dataset-validation-report hidden">
+                    id="dataset-validation-status"
+                    class="task-status hidden">
+                </div>
+
+                <div
+                    id="dataset-validation-result"
+                    class="dataset-validation-result hidden">
+                </div>
+
+                <div
+                    id="dataset-validation-error"
+                    class="task-error-container hidden">
                 </div>
 
                 <div class="form-section actions-section">
-                    <div
-                        id="training-status"
-                        class="training-status">
-                    </div>
-                    
+
                     <div class="action-buttons">
                         <button
                             type="button"
@@ -597,9 +623,7 @@
                             class="secondary-button">
                             <i class="fa-solid fa-check"></i>
                             Validate Dataset
-
                         </button>
-
 
                         <button
                             type="button"
@@ -608,21 +632,27 @@
                             disabled>
                             <i class="fa-solid fa-rocket"></i>
                             Train Model
-
                         </button>
                     </div>
+
                 </div>
-
-                
-
 
                 <!-- ==================================
                      TRAINING RESULTS
                 =================================== -->
+                <div
+                    id="training-status"
+                    class="task-status hidden">
+                </div>
 
                 <div
-                    id="training-results"
-                    class="training-results hidden">
+                    id="training-error"
+                    class="task-error-container hidden">
+                </div>
+                
+                <div
+                    id="training-result"
+                    class="training-result hidden">
 
                     <div class="section-header">
 
@@ -874,7 +904,17 @@
 
                         <div
                             id="save-model-status"
-                            class="validation-message">
+                            class="task-status hidden">
+                        </div>
+
+                        <div
+                            id="save-model-result"
+                            class="save-model-result hidden">
+                        </div>
+
+                        <div
+                            id="save-model-error"
+                            class="task-error-container hidden">
                         </div>
 
                     </div>

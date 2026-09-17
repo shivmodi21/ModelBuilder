@@ -16,7 +16,7 @@ def api_error(
                 "code": code,
                 "title": title,
                 "message": message,
-                "details": details or [],
+                "details": details,
             },
         },
     )

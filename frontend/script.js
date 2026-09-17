@@ -94,36 +94,47 @@ const ENCODING_OPTIONS = [
 
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabPanels = document.querySelectorAll(".tab-panel");
-const modelsContainer = document.getElementById("models-container");
-const predictionPanel = document.getElementById("prediction-panel");
 
+const modelsStatus = document.getElementById("models-status");
+const modelsResult = document.getElementById("models-result");
+const modelsError = document.getElementById("models-error");
+
+const predictionPanel = document.getElementById("prediction-panel");
 const predictionModelName = document.getElementById("prediction-model-name");
 const predictionModelDescription = document.getElementById("prediction-model-description");
 const predictionForm = document.getElementById("prediction-form");
 const predictionFields = document.getElementById("prediction-fields");
+const predictionStatus = document.getElementById("prediction-status");
 const predictionResult = document.getElementById("prediction-result");
+const predictionError = document.getElementById("prediction-error");
 const closePredictionButton = document.getElementById("close-prediction-button");
+const predictButton = document.getElementById("predict-button");
+
+const modelNameInput = document.getElementById("model-name");
+const modelChoiceInput = document.getElementById("model-choice");
+const trainingCSVInput = document.getElementById("training-csv");
+const datasetInfo = document.getElementById("dataset-info");
+const datasetAnalysisStatus = document.getElementById("dataset-analysis-status");
+const datasetAnalysisResult = document.getElementById("dataset-analysis-result");
+const datasetAnalysisError = document.getElementById("dataset-analysis-error");
 
 const inputFieldsContainer = document.getElementById("input-fields-container");
 const addInputFieldButton = document.getElementById("add-input-field");
-const modelNameInput = document.getElementById("model-name");
 const targetColumnInput = document.getElementById("target-column");
 const positiveClassInput = document.getElementById("positive-class");
 const negativeClassContainer = document.getElementById("negative-class-container");
 const negativeClassDisplay = document.getElementById("negative-class");
 
-const modelChoiceInput = document.getElementById("model-choice");
-const trainingCSVInput = document.getElementById("training-csv");
-const datasetInfo = document.getElementById("dataset-info");
-const datasetAnalysisStatus = document.getElementById("dataset-analysis-status");
-const datasetError = document.getElementById("dataset-error");
-const datasetValidationReport = document.getElementById("dataset-validation-report");
+const datasetValidationStatus = document.getElementById("dataset-validation-status");
+const datasetValidationResult = document.getElementById("dataset-validation-result");
+const datasetValidationError = document.getElementById("dataset-validation-error");
 const validateDatasetButton = document.getElementById("validate-dataset");
 
 const trainModelButton = document.getElementById("train-model");
-const trainingStatus = document.getElementById("training-status");
-const trainingResults = document.getElementById("training-results");
 const trainedModelName = document.getElementById("trained-model-name");
+const trainingStatus = document.getElementById("training-status");
+const trainingResult = document.getElementById("training-result");
+const trainingError = document.getElementById("training-error");
 
 const metricAccuracy = document.getElementById("metric-accuracy");
 const metricPrecision = document.getElementById("metric-precision");
@@ -143,7 +154,45 @@ const metricTestRows = document.getElementById("metric-test-rows");
 
 const saveModelButton = document.getElementById("save-model");
 const saveModelStatus = document.getElementById("save-model-status");
+const saveModelResult = document.getElementById("save-model-result");
+const saveModelError = document.getElementById("save-model-error");
 
+// =========================================================
+// TASK STATE
+// =========================================================
+
+function setTaskState(statusElement, resultElement, errorElement, state) {
+
+    // Always hide all three first.
+    statusElement?.classList.add("hidden");
+    resultElement?.classList.add("hidden");
+    errorElement?.classList.add("hidden");
+
+    // Show only the requested state.
+    if (state === "status") {
+        statusElement?.classList.remove("hidden");
+    }
+
+    else if (state === "result") {
+        resultElement?.classList.remove("hidden");
+    }
+
+    else if (state === "error") {
+        errorElement?.classList.remove("hidden");
+    }
+}
+
+function showTaskStatus(statusElement, resultElement, errorElement) {
+    setTaskState(statusElement, resultElement, errorElement, "status");
+}
+
+function showTaskResult(statusElement, resultElement, errorElement) {
+    setTaskState(statusElement, resultElement, errorElement, "result");
+}
+
+function showTaskError(statusElement, resultElement, errorElement) {
+    setTaskState(statusElement, resultElement, errorElement, "error");
+}
 
 // APPLICATION STATE
 const inputFields = [];
@@ -157,53 +206,112 @@ let selectedPositiveClass = "";
 // MODEL MANAGEMENT
 // =========================================================
 
+// modelsContainer.innerHTML = `
+//             <div class="models-error">
+//                 <p>Unable to load models.</p>
+//                 <button
+//                     type="button"
+//                     id="retry-models-button"
+//                     class="secondary-button"
+//                 >
+//                     Retry
+//                 </button>
+//             </div>
+//         `;
+
+//         const retryButton = document.getElementById("retry-models-button");
+
+//         if (retryButton) {
+//             retryButton.addEventListener("click", loadModels);
+//         }
+
 async function loadModels() {
 
-    if (!modelsContainer) {
+    if (!modelsStatus || !modelsResult || !modelsError) {
         return;
     }
 
-    modelsContainer.innerHTML = `
-        <div class="models-loading">
-            Loading models...
-        </div>
-    `;
+    modelsStatus.textContent = "Loading models...";
+    showTaskStatus(modelsStatus, modelsResult, modelsError);
 
     try {
         const response = await fetch("/api/models");
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.detail || "Unable to load models.");
+            displayModelsError(result);
+            return;
         }
 
         renderModels(result.models);
     } catch (error) {
-
-        modelsContainer.innerHTML = `
-            <div class="models-error">
-                <p>Unable to load models.</p>
-                <button
-                    type="button"
-                    id="retry-models-button"
-                    class="secondary-button"
-                >
-                    Retry
-                </button>
-            </div>
-        `;
-
-        const retryButton = document.getElementById("retry-models-button");
-
-        if (retryButton) {
-            retryButton.addEventListener("click", loadModels);
-        }
+        console.error("Model loading error:", error);
+        displayModelsError({
+            detail: {
+                success: false,
+                error: {
+                    code: "CLIENT_MODELS_ERROR",
+                    title: "Unable to Load Models",
+                    message: error.message || "An unexpected error occurred while loading models.",
+                    details: null
+                }
+            }
+        });
+        
     }
 }
 
+function displayModelsError(result) {
+
+    if (!modelsStatus || !modelsResult || !modelsError) {
+        return;
+    }
+
+    const error = extractAPIError(result, "Unable to load models.");
+
+    modelsError.innerHTML = `
+        <div class="task-error">
+
+            <div class="task-error-icon">
+                <i class="fa-solid fa-database"></i>
+            </div>
+
+            <div class="task-error-content">
+
+                <div class="task-error-header">
+                    <strong>
+                        ${escapeHTML(error.title)}
+                    </strong>
+
+                    ${
+                        error.code
+                            ? `
+                                <span class="task-error-code">
+                                    ${escapeHTML(error.code)}
+                                </span>
+                            `
+                            : ""
+                    }
+                </div>
+
+                <div class="task-error-message">
+                    ${escapeHTML(error.message)}
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+    showTaskError(modelsStatus, modelsResult, modelsError);
+}
+
 function renderModels(models) {
+    if (!modelsResult){
+        return;
+    }
     if (!models || models.length === 0) {
-        modelsContainer.innerHTML = `
+        modelsResult.innerHTML = `
             <div class="models-empty">
                 <h3>No saved models</h3>
                 <p>
@@ -215,7 +323,7 @@ function renderModels(models) {
         return;
     }
 
-    modelsContainer.innerHTML = models.map(model => createModelCard(model)).join("");
+    modelsResult.innerHTML = models.map(model => createModelCard(model)).join("");
     attachModelCardEvents();
 }
 
@@ -538,8 +646,14 @@ function renderPredictionForm(model) {
     predictionModelName.textContent = model.model_name;
     predictionModelDescription.textContent = `${formatModelName(model.model_type)} • Binary Classification`;
     predictionFields.innerHTML = model.input_fields.map(field => createPredictionField(field)).join("");
-    predictionResult.classList.add("hidden");
-    modelsContainer.classList.add("hidden");
+    
+    predictionStatus.textContent = "";
+    predictionResult.innerHTML = "";
+    predictionError.innerHTML = "";
+
+    setTaskState(predictionStatus, predictionResult, predictionError, null);
+    
+    setTaskState(modelsStatus, modelsResult, modelsError, null);
     predictionPanel.classList.remove("hidden");
 
     // Scroll to prediction area
@@ -780,7 +894,7 @@ function displayPredictionResult(result, positiveClass) {
         ${probabilityHTML}
     `;
 
-    predictionResult.classList.remove("hidden");
+    showTaskResult(predictionStatus, predictionResult, predictionError);
 
     predictionResult.scrollIntoView({
         behavior: "smooth",
@@ -790,18 +904,15 @@ function displayPredictionResult(result, positiveClass) {
 
 function displayPredictionValidationError(messages) {
 
-    predictionResult.innerHTML = `
-        <div class="prediction-error">
-            <i class="fa-solid fa-circle-exclamation"></i>
+    predictionError.innerHTML = `
+        <i class="fa-solid fa-circle-exclamation"></i>
 
-            <span>
-                ${messages.map(message => escapeHTML(message)).join("<br>")}
-            </span>
-
-        </div>
+        <span>
+            ${messages.map(message => escapeHTML(message)).join("<br>")}
+        </span>
     `;
 
-    predictionResult.classList.remove("hidden");
+    showTaskError(predictionStatus, predictionResult, predictionError);
 }
 
 function displayPredictionError(result) {
@@ -1152,15 +1263,111 @@ function renderInputFields() {
 // DATASET ANALYSIS
 // =========================================================
 
+function displayAnalysisResult(result){
+    const analysis = result.analysis;
+    const totalColumns = analysis.columns ?? 0;
+    const totalRows = analysis.rows ?? 0;
+    const columnsInfo = Array.isArray(analysis.columns_info) ? analysis.columns_info : [];
+    const targetCandidates = Array.isArray(analysis.target_candidates) ? analysis.target_candidates : [];
+
+    // Calculate feature counts
+    const numericalFeatures = columnsInfo.filter(column => column.suggested_nature === "Numerical").length;
+    const categoricalFeatures = columnsInfo.filter(column => column.suggested_nature === "Categorical").length;
+    const possibleTargetColumns = targetCandidates.length;
+
+    // Display analysis summary
+    datasetAnalysisResult.innerHTML = `
+        <div class="dataset-analysis-title">
+            ✓ Dataset Analysis Complete
+        </div>
+
+        <div class="dataset-analysis-grid">
+            <div class="dataset-analysis-item">
+                <span>
+                    Total available features
+                </span>
+
+                <strong>
+                    ${totalColumns}
+                </strong>
+
+            </div>
+
+            <div class="dataset-analysis-item">
+                <span>
+                    Total available data points
+                </span>
+
+                <strong>
+                    ${totalRows}
+                </strong>
+            </div>
+
+            <div class="dataset-analysis-item">
+                <span>
+                    Possible Numerical Features
+                </span>
+
+                <strong>
+                    ${numericalFeatures}
+                </strong>
+            </div>
+
+            <div class="dataset-analysis-item">
+                <span>
+                    Possible Categorical Features
+                </span>
+
+                <strong>
+                    ${categoricalFeatures}
+                </strong>
+            </div>
+
+            <div class="dataset-analysis-item">
+                <span>
+                    Possible Target Columns
+                </span>
+
+                <strong>
+                    ${possibleTargetColumns}
+                </strong>
+            </div>
+        </div>
+    `;
+
+    showTaskResult(datasetAnalysisStatus, datasetAnalysisResult, datasetAnalysisError);
+}
+
+function displayAnalysisError(result) {
+    let message = "Data Analysis failed.";
+
+    if (typeof result.detail === "string") {
+        message = result.detail;
+    }
+
+    else if (result.detail && typeof result.detail === "object") {
+        if (result.detail.error) {
+            message = result.detail.error;
+        }
+
+        else if (result.detail.message) {
+            message = result.detail.message;
+        }
+    }
+
+    datasetAnalysisStatus.textContent = "❌ " + message;
+    datasetAnalysisStatus.className = "dataset-analysis-status error";
+}
+
 async function analyzeDataset(file) {
 
-    if (!datasetAnalysisStatus) {
+    if (!datasetAnalysisStatus || !datasetAnalysisResult || !datasetAnalysisError) {
         return;
     }
 
-    datasetAnalysisStatus.className = "dataset-analysis-status loading";
-    datasetAnalysisStatus.classList.remove("hidden");
     datasetAnalysisStatus.textContent = "Analyzing dataset...";
+
+    showTaskStatus(datasetAnalysisStatus, datasetAnalysisResult, datasetAnalysisError);
 
     const formData = new FormData();
     formData.append("csv_file", file);
@@ -1183,105 +1390,24 @@ async function analyzeDataset(file) {
 
         // Populate fields
         populateFieldsFromAnalysis(result.analysis);
-        datasetAnalysisStatus.className = "dataset-analysis-status success";
-        
-        const analysis = result.analysis;
-        const totalColumns = analysis.columns ?? 0;
-        const totalRows = analysis.rows ?? 0;
-        const columnsInfo = Array.isArray(analysis.columns_info) ? analysis.columns_info : [];
-        const targetCandidates = Array.isArray(analysis.target_candidates) ? analysis.target_candidates : [];
-
-        // Calculate feature counts
-        const numericalFeatures = columnsInfo.filter(column => column.suggested_nature === "Numerical").length;
-        const categoricalFeatures = columnsInfo.filter(column => column.suggested_nature === "Categorical").length;
-        const possibleTargetColumns = targetCandidates.length;
-
-        // Display analysis summary
-        datasetAnalysisStatus.innerHTML = `
-            <div class="dataset-analysis-title">
-                ✓ Dataset Analysis Complete
-            </div>
-
-            <div class="dataset-analysis-grid">
-                <div class="dataset-analysis-item">
-                    <span>
-                        Total available features
-                    </span>
-
-                    <strong>
-                        ${totalColumns}
-                    </strong>
-
-                </div>
-
-                <div class="dataset-analysis-item">
-                    <span>
-                        Total available data points
-                    </span>
-
-                    <strong>
-                        ${totalRows}
-                    </strong>
-                </div>
-
-                <div class="dataset-analysis-item">
-                    <span>
-                        Possible Numerical Features
-                    </span>
-
-                    <strong>
-                        ${numericalFeatures}
-                    </strong>
-                </div>
-
-                <div class="dataset-analysis-item">
-                    <span>
-                        Possible Categorical Features
-                    </span>
-
-                    <strong>
-                        ${categoricalFeatures}
-                    </strong>
-                </div>
-
-                <div class="dataset-analysis-item">
-                    <span>
-                        Possible Target Columns
-                    </span>
-
-                    <strong>
-                        ${possibleTargetColumns}
-                    </strong>
-                </div>
-            </div>
-        `;
+        displayAnalysisResult(result);
 
     } catch (error) {
         console.error("Dataset analysis error:", error);
-        datasetAnalysisStatus.className = "dataset-analysis-status error";
-        datasetAnalysisStatus.textContent = `❌ Unable to analyze dataset: ${error.message}`;
+        displayAnalysisError({
+            detail: {
+                success: false,
+                error: {
+                    code: "CLIENT_DATA_ANALYSIS_ERROR",
+                    title: "Dataset Analysis Failed",
+                    message:
+                        error.message ||
+                        "An unexpected error occurred while analyzing the dataset.",
+                    details: null
+                }
+            }
+        });
     }
-}
-
-function displayAnalysisError(result) {
-    let message = "Data Analysis failed.";
-
-    if (typeof result.detail === "string") {
-        message = result.detail;
-    }
-
-    else if (result.detail && typeof result.detail === "object") {
-        if (result.detail.error) {
-            message = result.detail.error;
-        }
-
-        else if (result.detail.message) {
-            message = result.detail.message;
-        }
-    }
-
-    datasetAnalysisStatus.textContent = "❌ " + message;
-    datasetAnalysisStatus.className = "dataset-analysis-status error";
 }
 
 function populateFieldsFromAnalysis(result) {
@@ -1373,16 +1499,16 @@ async function handleCSVSelection() {
     datasetInfo.innerHTML = "";
     datasetInfo.classList.add("hidden");
 
-    datasetAnalysisStatus.innerHTML = "";
-    datasetAnalysisStatus.classList.add("hidden");
+    datasetAnalysisStatus.textContent = "";
+    datasetAnalysisResult.innerHTML = "";
+    datasetAnalysisError.innerHTML = "";
 
-    datasetError.innerHTML = "";
-    datasetError.classList.add("hidden");
-    
-    datasetValidationReport.innerHTML = "";
-    datasetValidationReport.classList.add("hidden");
+    datasetValidationStatus.textContent = "";
+    datasetValidationResult.innerHTML = "";
+    datasetValidationError.innerHTML = "";
 
-    trainingStatus.textContent = "";
+    setTaskState(datasetAnalysisStatus, datasetAnalysisResult, datasetAnalysisError, null);
+    setTaskState(datasetValidationStatus, datasetValidationResult, datasetValidationError, null);
 
     trainModelButton.disabled = true;
     
@@ -1395,7 +1521,28 @@ async function handleCSVSelection() {
 
     // Check extension
     if (!file.name.toLowerCase().endsWith(".csv")) {
-        datasetError.textContent = "❌ Please select a CSV file.";
+        datasetAnalysisError.innerHTML = `
+            <div class="task-error">
+                <div class="task-error-icon">
+                    <i class="fa-solid fa-file-circle-xmark"></i>
+                </div>
+
+                <div class="task-error-content">
+                    <div class="task-error-header">
+                        <strong>
+                            Invalid File Type
+                        </strong>
+                    </div>
+
+                    <div class="task-error-message">
+                        Please select a CSV file.
+                    </div>
+                </div>
+            </div>
+        `;
+
+        showTaskError(datasetAnalysisStatus, datasetAnalysisResult, datasetAnalysisError);
+        
         trainingCSVInput.value = "";
         validateConfiguration();
         return;
@@ -1614,7 +1761,7 @@ function validateConfiguration() {
 
     // Training is only allowed after
     // successful dataset validation.
-    trainModelButton.disabled =!(configurationValid && datasetValidated);
+    trainModelButton.disabled = !(configurationValid && datasetValidated);
 
     return configurationValid;
 }
@@ -1763,10 +1910,6 @@ function displayValidationError(result) {
     // Display in dataset information box
     datasetValidationReport.innerHTML = messageHTML;
     datasetValidationReport.classList.remove("hidden")
-    
-    // Dataset is not validated
-    datasetValidated = false;
-    trainModelButton.disabled = true;
 }
 
 function displayValidationResult(result) {
@@ -1774,9 +1917,21 @@ function displayValidationResult(result) {
 
     // Make sure backend returned dataset information
     if (!result) {
+        console.error("Dataset validation response is empty");
+        displayValidationError({
+            detail: {
+                success: false,
+                error: {
+                    code: "CLIENT_DATA_VALIDATOIN_ERROR",
+                    title: "Dataset Validation Failed",
+                    message: "Dataset validation response is empty.",
+                    details: null
+                }
+            }
+        });
+
+        // Dataset is not validated
         datasetValidated = false;
-        trainingStatus.textContent = "❌ Dataset validation returned an unexpected response.";
-        trainingStatus.style.color = "var(--error)";
         trainModelButton.disabled = true;
         return;
     }
@@ -2158,17 +2313,14 @@ function displayValidationResult(result) {
     // Display
     // -----------------------------------------
 
-    datasetValidationReport.innerHTML = reportHTML;
-    datasetValidationReport.classList.remove("hidden");
+    datasetValidationResult.innerHTML = reportHTML;
+    showTaskResult(datasetValidationStatus, datasetValidationResult, datasetValidationError);
 
     // -----------------------------------------
     // Validation succeeded
     // -----------------------------------------
-    datasetValidated = true;
-    trainingStatus.textContent = warnings.length > 0 ? `✓ Dataset valid with ${warnings.length} warning${warnings.length === 1 ? "" : "s"}.` : "✓ Dataset is valid and ready for training.";
-
-    trainingStatus.style.color = warnings.length > 0 ? "var(--warning)" : "var(--success)";
     console.log("Dataset validated successfully. Train button enabled.");
+    datasetValidated = true;
     validateConfiguration();
 }
 
@@ -2189,11 +2341,13 @@ function resetTargetClassSelection() {
 }
 
 function resetDatasetValidation() {
+    datasetValidationStatus.textContent = "";
+    datasetValidationResult.innerHTML = "";
+    datasetValidationError.innerHTML = "";
+
+    setTaskState(datasetValidationStatus, datasetValidationResult, datasetValidationError, null);
     datasetValidated = false;
     trainModelButton.disabled = true;
-    trainingStatus.textContent = "";
-    datasetValidationReport.innerHTML = "";
-    datasetValidationReport.classList.add("hidden");
 }
 
 // =========================================================
@@ -2201,6 +2355,8 @@ function resetDatasetValidation() {
 // =========================================================
 
 function displayTrainingResult(result) {
+    trainedModelName.textContent = result.model_name;
+
     const testMetrics = result.metrics?.test;
     const validationMetrics = result.metrics?.validation;
 
@@ -2229,10 +2385,10 @@ function displayTrainingResult(result) {
     metricValidationRows.textContent = result.validation_rows ?? "—";
     metricTestRows.textContent = result.test_rows ?? "—";
 
-    trainedModelName.textContent = result.model_name;
-    trainingStatus.textContent = "✓ Training complete. Review the validation and test metrics, then save to accept this model.";
-    trainingStatus.style.color = "var(--success)";
-    trainingResults.classList.remove("hidden");
+    showTaskResult(trainingStatus, trainingResult, trainingError);
+    
+    saveModelStatus.textContent = "✓ Training complete. Review the validation and test metrics, then save to accept this model.";
+    showTaskStatus(saveModelStatus, saveModelResult, saveModelError);
     saveModelButton.disabled = false;
 }
 
@@ -2373,16 +2529,10 @@ modelChoiceInput.addEventListener("change",() => {
 );
 
 // Dataset
-trainingCSVInput.addEventListener("change",
-    handleCSVSelection
-);
-
+trainingCSVInput.addEventListener("change", handleCSVSelection);
 
 // Training fields
-addInputFieldButton.addEventListener("click",
-    addInputField
-);
-
+addInputFieldButton.addEventListener("click", addInputField);
 
 // Target selection
 targetColumnInput.addEventListener("change", () => {
@@ -2401,8 +2551,19 @@ validateDatasetButton.addEventListener("click", async () => {
         const valid = validateConfiguration();
 
         if (!valid) {
-            trainingStatus.textContent = "Please fix the configuration errors above.";
-            trainingStatus.style.color = "var(--error)";
+            displayValidationError({
+                detail: {
+                    success: false,
+                    error: {
+                        code: "CLIENT_DATA_VALIDATOIN_ERROR",
+                        title: "Dataset Validation Failed",
+                        message: "Please fix the configuration errors above.",
+                        details: null
+                    }
+                }
+            });
+            datasetValidated = false;
+            trainModelButton.disabled = true;
             return;
         }
 
@@ -2410,10 +2571,36 @@ validateDatasetButton.addEventListener("click", async () => {
         const file = trainingCSVInput.files[0];
 
         if (!file) {
-            trainingStatus.textContent = "Please select a CSV file.";
-            trainingStatus.style.color = "var(--error)";
+            displayValidationError({
+                detail: {
+                    success: false,
+                    error: {
+                        code: "CLIENT_DATA_VALIDATOIN_ERROR",
+                        title: "Dataset Validation Failed",
+                        message: "Please select a CSV file.",
+                        details: null
+                    }
+                }
+            });
+            datasetValidated = false;
+            trainModelButton.disabled = true;
             return;
         }
+
+        // Clear previous validation output
+        datasetValidationResult.innerHTML = "";
+        datasetValidationError.innerHTML = "";
+
+        // Loading state
+        datasetValidationStatus.textContent = "Validating dataset...";
+        showTaskStatus(datasetValidationStatus, datasetValidationResult, datasetValidationError);
+        
+        validateDatasetButton.disabled = true;
+
+        validateDatasetButton.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Validating...
+        `;
 
         // Prepare request
         const formData = new FormData();
@@ -2424,16 +2611,6 @@ validateDatasetButton.addEventListener("click", async () => {
         formData.append("positive_class", selectedPositiveClass);
         formData.append("model_choice", modelChoiceInput.value);
         formData.append("csv_file", file);
-
-        // Loading state
-        trainingStatus.textContent = "Validating dataset...";
-        trainingStatus.style.color = "var(--text-secondary)";
-        validateDatasetButton.disabled = true;
-
-        validateDatasetButton.innerHTML = `
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            Validating...
-        `;
 
         try {
 
@@ -2450,6 +2627,14 @@ validateDatasetButton.addEventListener("click", async () => {
             // Handle error
             if (!response.ok) {
                 displayValidationError(result);
+                validateDatasetButton.disabled = false;
+                validateDatasetButton.innerHTML = `
+                    <i class="fa-solid fa-check"></i>
+                    Validate Dataset
+                `;
+
+                datasetValidated = false;
+                trainModelButton.disabled = true;
                 return;
             }
 
@@ -2458,9 +2643,19 @@ validateDatasetButton.addEventListener("click", async () => {
 
         } catch (error) {
             console.error("Dataset validation error:", error);
-            trainingStatus.textContent = `❌ ${error.message}`;
-            trainingStatus.style.color = "var(--error)";
-
+            displayValidationError({
+                detail: {
+                    success: false,
+                    error: {
+                        code: "CLIENT_DATA_VALIDATOIN_ERROR",
+                        title: "Dataset Validation Failed",
+                        message: error.message || "An unexpected error occurred while validating the dataset.",
+                        details: null
+                    }
+                }
+            });
+            datasetValidated = false;
+            trainModelButton.disabled = true;
         } finally {
             validateDatasetButton.disabled = false;
             validateDatasetButton.innerHTML = `
@@ -2475,18 +2670,55 @@ validateDatasetButton.addEventListener("click", async () => {
 trainModelButton.addEventListener("click", async () => {
         // Make sure configuration is valid
         if (!validateConfiguration()) {
-            trainingStatus.textContent = "Please fix the configuration errors.";
-            trainingStatus.style.color = "var(--error)";
+            displayTrainingError({
+                detail: {
+                    success: false,
+                    error: {
+                        code: "CLIENT_MODEL_TRAIN_ERROR",
+                        title: "Model Training Failed",
+                        message: "Please fix the configuration errors above.",
+                        details: null
+                    }
+                }
+            });
             return;
         }
 
         const file = trainingCSVInput.files[0];
 
         if (!file) {
-            trainingStatus.textContent = "Please select a CSV file.";
-            trainingStatus.style.color = "var(--error)";
+            displayTrainingError({
+                detail: {
+                    success: false,
+                    error: {
+                        code: "CLIENT_MODEL_TRAIN_ERROR",
+                        title: "Model Training Failed",
+                        message: "Please select a CSV file.",
+                        details: null
+                    }
+                }
+            });
             return;
         }
+
+        // Clear previous training output
+        trainingResult.innerHTML = "";
+        trainingError.innerHTML = "";
+
+        trainingStatus.textContent = "Training model... (It will take time on hosted platform)";
+        showTaskStatus(trainingStatus, trainingResult, trainingError);
+        setTaskState(saveModelStatus, saveModelResult, saveModelError, null);
+        
+        // UI loading state
+        trainModelButton.disabled = true;
+        validateDatasetButton.disabled = true;
+
+        trainModelButton.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Training...
+        `;
+
+        currentTrainingId = null;
 
         // Prepare request
         const formData = new FormData();
@@ -2497,24 +2729,6 @@ trainModelButton.addEventListener("click", async () => {
         formData.append("positive_class", selectedPositiveClass);
         formData.append("model_choice", modelChoiceInput.value);
         formData.append("csv_file", file);
-
-        // UI loading state
-        trainModelButton.disabled = true;
-        validateDatasetButton.disabled = true;
-
-        trainModelButton.innerHTML = `
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            Training...
-        `;
-
-        trainingStatus.textContent = "Training model... (It will take time on hosted platform)";
-        trainingStatus.style.color = "var(--text-secondary)";
-
-        // Hide old result
-        trainingResults.classList.add("hidden");
-
-        saveModelStatus.textContent = "";
-        currentTrainingId = null;
 
         try {
             // Send training request
@@ -2530,6 +2744,15 @@ trainModelButton.addEventListener("click", async () => {
             // Backend error
             if (!response.ok) {
                 displayTrainingError(result);
+
+                validateDatasetButton.disabled = false;
+                validateConfiguration();
+
+                trainModelButton.innerHTML = `
+                    <i class="fa-solid fa-rocket"></i>
+                    Train Model
+                `;
+                
                 return;
             }
 
@@ -2541,8 +2764,17 @@ trainModelButton.addEventListener("click", async () => {
 
         } catch (error) {
             console.error("Training error:", error);
-            trainingStatus.textContent = `❌ ${error.message}`;
-            trainingStatus.style.color = "var(--error)";
+            displayTrainingError({
+                detail: {
+                    success: false,
+                    error: {
+                        code: "CLIENT_MODEL_TRAIN_ERROR",
+                        title: "Model Training Failed",
+                        message: error.message || "An unexpected error occurred while training the model.",
+                        details: null
+                    }
+                }
+            });
 
         } finally {
             validateDatasetButton.disabled = false;
@@ -2561,25 +2793,39 @@ trainModelButton.addEventListener("click", async () => {
 saveModelButton.addEventListener("click", async () => {
         // Make sure a training session exists
         if (!currentTrainingId) {
-            saveModelStatus.textContent = "No trained model is available.";
-            saveModelStatus.className = "validation-message error";
+            displaySavingError({
+                detail: {
+                    success: false,
+                    error: {
+                        code: "CLIENT_MODEL_SAVE_ERROR",
+                        title: "Model Saving Failed",
+                        message: "No trained model is available.",
+                        details: null
+                    }
+                }
+            });
+            showTaskError(saveModelStatus, saveModelResult, saveModelError);
             return;
         }
 
-        // Prepare request
-        const formData = new FormData();
-        formData.append("training_id", currentTrainingId);
+        // Clear previous save output
+        saveModelResult.innerHTML = "";
+        saveModelError.innerHTML = "";
+
+        // Loading state
+        saveModelStatus.textContent = "Saving model...";
+        showTaskStatus(saveModelStatus, saveModelResult, saveModelError);
 
         // Loading state
         saveModelButton.disabled = true;
-
         saveModelButton.innerHTML = `
             <i class="fa-solid fa-spinner fa-spin"></i>
             Saving...
         `;
 
-        saveModelStatus.textContent = "Saving model...";
-        saveModelStatus.className = "validation-message";
+        // Prepare request
+        const formData = new FormData();
+        formData.append("training_id", currentTrainingId);
 
         try {
             const response = await fetch("/api/save-model",
@@ -2594,14 +2840,17 @@ saveModelButton.addEventListener("click", async () => {
             // Backend error
             if (!response.ok) {
                 displaySavingError(result);
+                saveModelButton.disabled = false;
+                saveModelButton.innerHTML = `
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    Save Model
+                `;
                 return;
             }
 
             // Success
-            saveModelStatus.textContent = "✓ Model saved successfully.";
-            saveModelStatus.className = "validation-message success";
-            trainingStatus.textContent = "✓ Model has been saved and is now available in the Models tab.";
-            trainingStatus.style.color = "var(--success)";
+            saveModelResult.textContent = "✓ Model has been saved and is now available in the Models tab";
+            showTaskResult(saveModelStatus, saveModelResult, saveModelError);
 
             // Refresh Tab 1 immediately so the accepted model can be selected
             // for prediction without reloading the page.
@@ -2618,19 +2867,27 @@ saveModelButton.addEventListener("click", async () => {
 
         } catch (error) {
             console.error("Save model error:", error);
-            saveModelStatus.textContent = `❌ ${error.message}`;
-            saveModelStatus.className = "validation-message error";
-
+            displaySavingError({
+                detail: {
+                    success: false,
+                    error: {
+                        code: "CLIENT_MODEL_SAVE_ERROR",
+                        title: "Model Saving Failed",
+                        message: error.message || "An unexpected error occurred while saving the model.",
+                        details: null
+                    }
+                }
+            });
         } finally {
 
             if (currentTrainingId) {
                 saveModelButton.disabled = false;
-
-                saveModelButton.innerHTML = `
-                    <i class="fa-solid fa-floppy-disk"></i>
-                    Save Model
-                `;
             }
+
+            saveModelButton.innerHTML = `
+                <i class="fa-solid fa-floppy-disk"></i>
+                Save Model
+            `;
         }
     }
 );
@@ -2692,10 +2949,12 @@ predictionFields.addEventListener("input", (event) => {
 closePredictionButton.addEventListener("click", () => {
         selectedModel = null;
         predictionPanel.classList.add("hidden");
-        modelsContainer.classList.remove("hidden");
         predictionFields.innerHTML = "";
-        predictionResult.classList.add("hidden");
-        modelsContainer.scrollIntoView({
+
+        setTaskState(predictionStatus, predictionResult, predictionError, null);
+        showTaskResult(modelsStatus, modelsResult, modelsError);
+        
+        modelsResult.scrollIntoView({
             behavior: "smooth",
             block: "start"
         });
@@ -2708,11 +2967,6 @@ predictionForm.addEventListener("submit", async (event) => {
         if (!selectedModel) {
             return;
         }
-
-        const formData = new FormData();
-
-        // Model ID
-        formData.append("model_id", selectedModel.model_id);
 
         // Collect input values
         const userData = {};
@@ -2773,17 +3027,21 @@ predictionForm.addEventListener("submit", async (event) => {
             return;
         }
 
-        formData.append("input_data", JSON.stringify(userData));
-
         // Loading state
-        const predictButton = document.getElementById("predict-button");
         predictButton.disabled = true;
         predictButton.innerHTML = `
             <i class="fa-solid fa-spinner fa-spin"></i>
             Predicting...
         `;
 
-        predictionResult.classList.add("hidden");
+        predictionStatus.textContent = "Generating prediction...";
+        showTaskStatus(predictionStatus, predictionResult, predictionError);
+
+        const formData = new FormData();
+
+        // Model ID
+        formData.append("model_id", selectedModel.model_id);
+        formData.append("input_data", JSON.stringify(userData));
 
         try {
             const response = await fetch("/api/predict",
@@ -2797,6 +3055,11 @@ predictionForm.addEventListener("submit", async (event) => {
 
             if (!response.ok) {
                 displayPredictionError(result);
+                predictButton.disabled = false;
+                predictButton.innerHTML = `
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    Predict
+                `;
                 return;
             }
 
@@ -2805,9 +3068,17 @@ predictionForm.addEventListener("submit", async (event) => {
 
         } catch (error) {
             console.error("Prediction error:", error);
-            predictionResult.textContent = `❌ ${error.message}`;
-            predictionResult.classList.remove("hidden");
-
+            displayPredictionError({
+                detail: {
+                    success: false,
+                    error: {
+                        code: "CLIENT_MODEL_PREDICTION_ERROR",
+                        title: "Model Prediction Failed",
+                        message: error.message || "An unexpected error occurred while predicting.",
+                        details: null
+                    }
+                }
+            });
         } finally {
             predictButton.disabled = false;
 
