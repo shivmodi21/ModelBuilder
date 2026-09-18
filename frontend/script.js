@@ -341,6 +341,10 @@ async function loadModels() {
         return;
     }
 
+    if (!predictionPanel.classList.contains("hidden")) {
+        closePredictionPanel();
+    }
+
     modelsStatus.textContent = "Loading models...";
     showTaskStatus(modelsStatus, modelsResult, modelsError);
 
@@ -877,10 +881,9 @@ function createNumericalField(field, fieldId) {
 // VALIDATE NUMERICAL TRANSFORMATION
 function validateNumericalTransformation(field, value) {
     const transformation = field.feature_engineering?.type || "none";
-    const fieldName = field.name;
 
     if (!Number.isFinite(value)) {
-        return `${fieldName} must be a valid number.`;
+        return `Must be a valid number.`;
     }
 
     if (transformation === "none") {
@@ -890,7 +893,7 @@ function validateNumericalTransformation(field, value) {
     if (transformation === "log") {
         if (value <= 0) {
             return (
-                `${fieldName} must be greater than 0 ` +
+                `Must be greater than 0 ` +
                 `because Log transformation is applied.`
             );
         }
@@ -900,7 +903,7 @@ function validateNumericalTransformation(field, value) {
     if (transformation === "log1p") {
         if (value < 0) {
             return (
-                `${fieldName} must be greater than ` +
+                `Must be greater than ` +
                 `or equal to 0 because Log1p ` +
                 `transformation is applied.`
             );
@@ -911,7 +914,7 @@ function validateNumericalTransformation(field, value) {
     if (transformation === "sqrt") {
         if (value < 0) {
             return (
-                `${fieldName} must be greater than ` +
+                `Must be greater than ` +
                 `or equal to 0 because Square Root ` +
                 `transformation is applied.`
             );
@@ -1002,15 +1005,25 @@ function displayPredictionResult(result, positiveClass) {
     });
 }
 
-function displayPredictionValidationError(messages) {
+function closePredictionPanel() {
+    selectedModel = null;
+    predictionPanel.classList.add("hidden");
+    predictionFields.innerHTML = "";
 
-    predictionError.innerHTML = `
-        <i class="fa-solid fa-circle-exclamation"></i>
+    setTaskState(predictionStatus, predictionResult, predictionError, null);
+    showTaskResult(modelsStatus, modelsResult, modelsError);
+}
 
-        <span>
-            ${messages.map(message => escapeHTML(message)).join("<br>")}
-        </span>
-    `;
+function displayPredictionValidationError(errors) {
+
+    const error = {
+        code: "CLIENT_PREDICTION_VALIDATION_ERROR",
+        title: "Check your prediction inputs",
+        message: "Please correct the following fields before generating a prediction.",
+        details: errors
+    };
+
+    predictionError.innerHTML = createTaskErrorHTML(error, "fa-circle-exclamation");
 
     showTaskError(predictionStatus, predictionResult, predictionError);
 }
@@ -1581,19 +1594,14 @@ async function handleCSVSelection() {
     datasetAnalysisResult.innerHTML = "";
     datasetAnalysisError.innerHTML = "";
 
-    datasetValidationStatus.textContent = "";
-    datasetValidationResult.innerHTML = "";
-    datasetValidationError.innerHTML = "";
-
     setTaskState(datasetAnalysisStatus, datasetAnalysisResult, datasetAnalysisError, null);
-    setTaskState(datasetValidationStatus, datasetValidationResult, datasetValidationError, null);
 
-    trainModelButton.disabled = true;
+    inputFields.length = 0;
+    inputFieldsContainer.innerHTML = "";
     
-    datasetValidated = false;
     targetCandidates = [];
-    selectedTargetClasses = [];
-    selectedPositiveClass = "";
+    resetTargetClassSelection();
+    resetDatasetValidation();
 
     if (!file) {return;}
 
@@ -2281,6 +2289,42 @@ function resetTargetClassSelection() {
     negativeClassContainer.classList.add("hidden");
 }
 
+function resetTrainingResult() {
+
+    currentTrainingId = null;
+
+    trainedModelName.textContent = "—";
+
+    metricAccuracy.textContent = "—";
+    metricPrecision.textContent = "—";
+    metricRecall.textContent = "—";
+    metricF1.textContent = "—";
+    metricRocAuc.textContent = "—";
+
+    validationMetricAccuracy.textContent = "—";
+    validationMetricPrecision.textContent = "—";
+    validationMetricRecall.textContent = "—";
+    validationMetricF1.textContent = "—";
+    validationMetricRocAuc.textContent = "—";
+
+    metricTrainRows.textContent = "—";
+    metricValidationRows.textContent = "—";
+    metricTestRows.textContent = "—";
+
+    trainingStatus.textContent = "";
+    trainingError.innerHTML = "";
+
+    setTaskState(trainingStatus, trainingResult, trainingError, null);
+
+    saveModelStatus.textContent = "";
+    saveModelResult.innerHTML = "";
+    saveModelError.innerHTML = "";
+
+    setTaskState(saveModelStatus, saveModelResult, saveModelError, null);
+
+    saveModelButton.disabled = true;
+}
+
 function resetDatasetValidation() {
     datasetValidationStatus.textContent = "";
     datasetValidationResult.innerHTML = "";
@@ -2289,6 +2333,8 @@ function resetDatasetValidation() {
     setTaskState(datasetValidationStatus, datasetValidationResult, datasetValidationError, null);
     datasetValidated = false;
     trainModelButton.disabled = true;
+
+    resetTrainingResult();
 }
 
 // =========================================================
@@ -2611,8 +2657,7 @@ trainModelButton.addEventListener("click", async () => {
             return;
         }
 
-        // Clear previous training output
-        trainingResult.innerHTML = "";
+        // Clear previous training error
         trainingError.innerHTML = "";
 
         trainingStatus.textContent = "Training model... (It will take time on hosted platform)";
@@ -2856,13 +2901,8 @@ predictionFields.addEventListener("input", (event) => {
 );
 
 closePredictionButton.addEventListener("click", () => {
-        selectedModel = null;
-        predictionPanel.classList.add("hidden");
-        predictionFields.innerHTML = "";
+        closePredictionPanel();
 
-        setTaskState(predictionStatus, predictionResult, predictionError, null);
-        showTaskResult(modelsStatus, modelsResult, modelsError);
-        
         modelsResult.scrollIntoView({
             behavior: "smooth",
             block: "start"
@@ -2892,7 +2932,10 @@ predictionForm.addEventListener("submit", async (event) => {
 
             // Required field
             if (value === "") {
-                validationErrors.push(`${field.name} is required.`);
+                validationErrors.push({
+                    field: field.name,
+                    message: "This field is required."
+                });
                 return;
             }
 
@@ -2901,7 +2944,10 @@ predictionForm.addEventListener("submit", async (event) => {
                 const numericValue = Number(value);
 
                 if (!Number.isFinite(numericValue)) {
-                    validationErrors.push(`${field.name} must be a valid number.`);
+                    validationErrors.push({
+                        field: field.name,
+                        message: "Enter a valid number."
+                    });
                     return;
                 }
 
@@ -2909,7 +2955,10 @@ predictionForm.addEventListener("submit", async (event) => {
                 const transformationError = validateNumericalTransformation(field, numericValue);
 
                 if (transformationError) {
-                    validationErrors.push(transformationError);
+                    validationErrors.push({
+                        field: field.name,
+                        message: transformationError
+                    });
                     return;
                 }
 
@@ -2922,7 +2971,10 @@ predictionForm.addEventListener("submit", async (event) => {
                 const options = field.options;
 
                 if (options.length > 0 && !options.map(String).includes(value)) {
-                    validationErrors.push(`${field.name} has an invalid value.`);
+                    validationErrors.push({
+                        field: field.name,
+                        message: "The selected value is not valid."
+                    });
                     return;
                 }
 

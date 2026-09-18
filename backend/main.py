@@ -600,7 +600,7 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
 
     # Prepare input according to model metadata
     try:
-        dataframe = pd.DataFrame([input_data])
+        dataframe = pd.DataFrame([model_input])
     except Exception as error:
         api_error(
             status_code=400,

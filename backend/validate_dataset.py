@@ -427,6 +427,7 @@ def validate_numerical_values(dataframe: pd.DataFrame, field: dict):
             message=(f"'{field_name}' Numerical field contains non-numeric values. Change the data type to Categorical or correct the source data."),
             details=[
                 {
+                    "field": field_name,
                     "invalid_values": invalid_values[:20],
                     "invalid_count": len(invalid_values)
                 }
@@ -1066,11 +1067,7 @@ def validate_all_numerical_fields(dataframe: pd.DataFrame, fields: list):
             code='INVALID_NUMERICAL_VALUES',
             title='Invalid Numerical Values',
             message="Following Numerical fields contain non-numeric values. Change their data type to Categorical or correct the source data.",
-            details=[
-                {
-                    "invalid_fields": invalid_fields
-                }
-            ]
+            details=invalid_fields
         )
 
 

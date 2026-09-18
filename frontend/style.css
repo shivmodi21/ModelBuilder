@@ -277,15 +277,11 @@ select {
     color: var(--error);
 }
 
-.validation-message.success {
-    color: var(--success);
-}
-
 /* =========================================================
    8. MODELS
 ========================================================= */
 
-.models-container {
+.models-result {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 18px;
@@ -489,9 +485,7 @@ select {
     flex: 1;
 }
 
-.models-loading,
-.models-empty,
-.models-error {
+.models-empty {
     grid-column: 1 / -1;
     padding: 35px 20px;
     background: var(--card);
@@ -500,19 +494,13 @@ select {
     text-align: center;
 }
 
-.models-empty h3,
-.models-error h3 {
+.models-empty h3 {
     margin-bottom: 6px;
 }
 
-.models-empty p,
-.models-error p {
+.models-empty p {
     color: var(--text-secondary);
     font-size: 0.85rem;
-}
-
-.models-error {
-    color: var(--error);
 }
 
 /* =========================================================
@@ -559,12 +547,6 @@ select {
     font-weight: 700;
 }
 
-.form-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-}
-
 .actions-section {
     margin-top: 20px;
 }
@@ -574,24 +556,6 @@ select {
     justify-content: flex-end;
     gap: 12px;
     margin-top: 15px;
-}
-
-.training-status {
-    min-height: 20px;
-    margin-bottom: 5px;
-    font-size: 0.85rem;
-}
-
-.training-status.success {
-    color: var(--success);
-}
-
-.training-status.error {
-    color: var(--error);
-}
-
-.training-status.loading {
-    color: var(--text-secondary);
 }
 
 /* =========================================================
@@ -789,21 +753,8 @@ select {
     border-color: rgba(248, 81, 73, 0.4);
 }
 
-.dataset-analysis-status {
-    margin-top: 12px;
-    font-size: 0.85rem;
-}
-
-.dataset-analysis-status.loading {
-    color: var(--text-secondary);
-}
-
-.dataset-analysis-status.success {
-    color: var(--success);
-}
-
-.dataset-analysis-status.error {
-    color: var(--error);
+.dataset-analysis-result {
+    margin-top: 20px;
 }
 
 .dataset-analysis-title {
@@ -841,31 +792,6 @@ select {
     font-weight: 600;
 }
 
-.dataset-error-list {
-    margin-top: 12px;
-    padding-left: 18px;
-    color: var(--error);
-    font-size: 0.82rem;
-}
-
-.dataset-error-list li {
-    margin-bottom: 4px;
-}
-
-.dataset-error-list code {
-    padding: 2px 5px;
-    background: rgba(248, 81, 73, 0.08);
-    border-radius: 4px;
-    color: var(--error);
-    font-size: 0.78rem;
-}
-
-.dataset-error-help {
-    display: block;
-    margin-top: 8px;
-    color: var(--text-secondary);
-}
-
 /* =========================================================
    12. TARGET SELECTION
 ========================================================= */
@@ -896,50 +822,16 @@ select {
     font-weight: 600;
 }
 
-.target-class-summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.target-class-label {
-    padding: 4px 8px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    color: var(--text-secondary);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.35px;
-}
-
-.target-class-value {
-    color: var(--text);
-    font-weight: 600;
-}
-
 .target-selection select:disabled {
     opacity: 0.55;
     cursor: not-allowed;
-}
-
-.target-class-label.positive {
-    border-color: rgba(63, 185, 80, 0.35);
-    color: var(--success);
-}
-
-.target-class-label.negative {
-    border-color: rgba(248, 81, 73, 0.35);
-    color: var(--error);
 }
 
 /* =========================================================
    13. DATASET VALIDATION REPORT
 ========================================================= */
 
-.dataset-validation-report {
+.dataset-validation-result {
     margin-top: 20px;
 }
 
@@ -1258,7 +1150,7 @@ select {
    16. TRAINING RESULTS / METRICS
 ========================================================= */
 
-.training-results {
+.training-result {
     margin-top: 25px;
     padding: 26px;
     background: var(--card);
@@ -1314,6 +1206,16 @@ select {
     font-size: 0.75rem;
 }
 
+.save-model-result {
+    margin-top: 15px;
+    padding: 13px 15px;
+    background: rgba(63, 185, 80, 0.08);
+    border: 1px solid rgba(63, 185, 80, 0.3);
+    border-radius: 8px;
+    color: var(--success);
+    font-size: 0.85rem;
+}
+
 .save-model-section {
     padding-top: 24px;
     border-top: 1px solid var(--border);
@@ -1328,7 +1230,6 @@ select {
     color: var(--text-secondary);
     font-size: 0.85rem;
 }
-
 /* =========================================================
    17. PREDICTION PANEL
 ========================================================= */
@@ -1388,6 +1289,31 @@ select {
     margin-top: 22px;
     padding-top: 20px;
     border-top: 1px solid var(--border);
+}
+
+.prediction-validation-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.prediction-validation-item {
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.prediction-validation-item .task-error-detail-label {
+    flex: none;
+    margin-bottom: 2px;
+    color: var(--text);
+    font-size: 0.8rem;
+}
+
+.prediction-validation-item .task-error-detail-value {
+    color: var(--text-secondary);
+    font-size: 0.76rem;
 }
 
 /* =========================================================
@@ -1506,23 +1432,6 @@ select {
     border-radius: inherit;
 }
 
-.prediction-error {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px 14px;
-    background: rgba(248, 81, 73, 0.08);
-    border: 1px solid rgba(248, 81, 73, 0.3);
-    border-radius: 7px;
-    color: var(--error);
-    font-size: 0.82rem;
-}
-
-.prediction-error i {
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-
 /* =========================================================
    19. TASK STATES
 ========================================================= */
@@ -1588,30 +1497,56 @@ select {
     font-size: 0.9rem;
 }
 
+.task-error-code {
+    margin-left: 8px;
+    color: var(--text-muted);
+    font-family: monospace;
+    font-size: 0.7rem;
+}
+
 .task-error-message {
     color: var(--text-secondary);
     font-size: 0.82rem;
     line-height: 1.5;
 }
 
-.task-error-code {
-    margin-top: 6px;
-    color: var(--text-muted);
-    font-family: monospace;
-    font-size: 0.7rem;
-}
-
 .task-error-details {
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid rgba(248, 81, 73, 0.18);
-    color: var(--text-secondary);
+}
+
+.task-error-detail {
+    display: flex;
+    gap: 10px;
+    padding: 5px 0;
     font-size: 0.78rem;
+}
+
+.task-error-detail-label {
+    flex: 0 0 140px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.task-error-detail-value {
+    min-width: 0;
+    color: var(--text-secondary);
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.task-error-detail-list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.task-error-detail-list li {
+    margin-bottom: 3px;
 }
 
 .task-error-actions {
     display: flex;
-    justify-content: flex-start;
     gap: 10px;
     margin-top: 12px;
 }
@@ -1662,7 +1597,7 @@ select {
         width: min(100% - 30px, var(--container));
     }
 
-    .models-container {
+    .models-result {
         grid-template-columns: 1fr;
     }
 
@@ -1676,10 +1611,6 @@ select {
 
     .model-card .model-metrics {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .form-row {
-        grid-template-columns: 1fr;
     }
 
     .input-fields-header {
@@ -1738,6 +1669,10 @@ select {
     .prediction-actions {
         gap: 10px;
     }
+
+    .task-error-detail-label {
+        flex-basis: 120px;
+    }
 }
 
 /* =========================================================
@@ -1778,7 +1713,7 @@ select {
     }
 
     .form-section,
-    .training-results,
+    .training-result,
     .prediction-panel {
         padding: 18px;
     }
@@ -1797,7 +1732,6 @@ select {
         height: 24px;
     }
 
-    .form-row,
     .prediction-fields {
         grid-template-columns: 1fr;
     }
@@ -1931,6 +1865,41 @@ select {
         font-size: 0.74rem;
     }
 
+    .task-status {
+        padding: 12px 13px;
+    }
+
+    .task-error {
+        gap: 10px;
+        padding: 13px;
+    }
+
+    .task-error-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .task-error-detail {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .task-error-detail-label {
+        flex-basis: auto;
+    }
+
+    .task-error-actions {
+        flex-direction: column;
+    }
+
+    .task-error-actions .secondary-button {
+        width: 100%;
+    }
+
+    .save-model-result {
+        padding: 12px 13px;
+    }
+
     .app-footer {
         margin-top: 35px;
         padding: 20px 0;
@@ -1942,7 +1911,7 @@ select {
    22. RESPONSIVE — SMALL MOBILE
 ========================================================= */
 
-@media (max-width: 430px) {
+@media (max-width: 480px) {
 
     .dataset-analysis-grid {
         grid-template-columns: 1fr;
@@ -1986,6 +1955,32 @@ select {
     .probability-row > span,
     .probability-value strong {
         font-size: 0.82rem;
+    }
+
+    .task-error {
+        gap: 9px;
+        padding: 12px;
+    }
+
+    .task-error-header {
+        display: block;
+    }
+
+    .task-error-code {
+        display: block;
+        margin-top: 3px;
+    }
+
+    .task-error-message {
+        font-size: 0.8rem;
+    }
+
+    .task-error-detail {
+        font-size: 0.76rem;
+    }
+
+    .task-status {
+        font-size: 0.8rem;
     }
 }
 
