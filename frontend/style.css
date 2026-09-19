@@ -319,11 +319,15 @@ select {
 }
 
 .model-card-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
     min-width: 0;
 }
 
 .model-card-title h3 {
-    margin: 0 0 6px;
+    margin: 0;
     color: var(--text);
     font-size: 1.25rem;
     font-weight: 700;
@@ -446,7 +450,7 @@ select {
 
 .model-card .model-metrics {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
     margin: 0;
 }
@@ -1505,6 +1509,7 @@ select {
 }
 
 .task-error-message {
+    margin: 0 0 12px;
     color: var(--text-secondary);
     font-size: 0.82rem;
     line-height: 1.5;
@@ -1514,6 +1519,17 @@ select {
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid rgba(248, 81, 73, 0.18);
+}
+
+.task-error-detail-item {
+    padding: 9px 11px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(248, 81, 73, 0.16);
+    border-radius: 7px;
+}
+
+.task-error-detail-item + .task-error-detail-item {
+    margin-top: 8px;
 }
 
 .task-error-detail {
@@ -1637,7 +1653,7 @@ select {
     }
 
     .model-card .model-metrics {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 
     .input-fields-header {
@@ -1829,7 +1845,6 @@ select {
     }
 
     .model-card-header {
-        flex-direction: column;
         gap: 10px;
         padding: 18px;
     }
@@ -1840,7 +1855,7 @@ select {
     }
 
     .model-card .model-metrics {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 
     .model-card-actions {
@@ -1967,7 +1982,7 @@ select {
     }
 
     .model-card .model-metrics {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .training-metrics-grid {

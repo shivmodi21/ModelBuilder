@@ -224,20 +224,21 @@ function createErrorDetailsHTML(details) {
     const rows = items.map(item => {
         if (!item || typeof item !== "object" || Array.isArray(item)) {
             return `
-                <div class="task-error-detail">
-                    <span class="task-error-detail-value">
-                        ${escapeHTML(String(item))}
-                    </span>
+                <div class="task-error-detail-item">
+                    <div class="task-error-detail">
+                        <span class="task-error-detail-value">
+                            ${escapeHTML(String(item))}
+                        </span>
+                    </div>
                 </div>
             `;
         }
 
-        return Object.entries(item).map(([key, value]) => {
+        const detailRows = Object.entries(item).map(([key, value]) => {
             let valueHTML;
 
             if (Array.isArray(value)) {
-
-                if (key === "allowed_values" || key === "missing_columns"){
+                if (key === "allowed_values" || key === "missing_columns") {
                     valueHTML = value.length > 0
                         ? `
                             <div class="task-error-value-chips">
@@ -250,7 +251,7 @@ function createErrorDetailsHTML(details) {
                         `
                         : "—";
                 }
-                else if (key === "invalid_values" || key === "classes"){
+                else if (key === "invalid_values" || key === "classes") {
                     let totalCount;
 
                     if (key === "invalid_values") {
@@ -260,14 +261,19 @@ function createErrorDetailsHTML(details) {
                         totalCount = Number(item.number_of_classes);
                     }
 
-                    const hasMoreValues = Number.isFinite(totalCount) && totalCount > value.length;
+                    const displayLimit = 20;
+                    const displayedValues = value.slice(0, displayLimit);
 
-                    valueHTML = value.length > 0
+                    const hasMoreValues =
+                        Number.isFinite(totalCount) &&
+                        totalCount > displayedValues.length;
+
+                    valueHTML = displayedValues.length > 0
                         ? `
                             <div class="task-error-value-list">
-                                ${value.map(item => `
+                                ${displayedValues.map(value => `
                                     <span class="task-error-value">
-                                        ${escapeHTML(String(item))}
+                                        ${escapeHTML(String(value))}
                                     </span>
                                 `).join(", ")}
 
@@ -288,16 +294,15 @@ function createErrorDetailsHTML(details) {
                     valueHTML = value.length > 0
                         ? `
                             <div class="task-error-value-list">
-                                ${value.map(item => `
+                                ${value.map(value => `
                                     <span class="task-error-value">
-                                        ${escapeHTML(String(item))}
+                                        ${escapeHTML(String(value))}
                                     </span>
                                 `).join(", ")}
                             </div>
                         `
                         : "—";
                 }
-
             }
             else if (value !== null && typeof value === "object") {
                 valueHTML = escapeHTML(JSON.stringify(value));
@@ -318,13 +323,15 @@ function createErrorDetailsHTML(details) {
                 </div>
             `;
         }).join("");
+
+        return `
+            <div class="task-error-detail-item">
+                ${detailRows}
+            </div>
+        `;
     }).join("");
 
-    return `
-        <div class="task-error-details">
-            ${rows}
-        </div>
-    `;
+    return rows;
 }
 
 function formatErrorDetailLabel(key) {
