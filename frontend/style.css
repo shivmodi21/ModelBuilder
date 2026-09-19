@@ -283,8 +283,9 @@ select {
 
 .models-result {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 18px;
+    width: 100%;
     margin-top: 25px;
 }
 
@@ -1439,7 +1440,6 @@ select {
 .task-status {
     display: flex;
     align-items: center;
-    gap: 10px;
     margin-top: 15px;
     padding: 13px 15px;
     background: var(--bg);
@@ -1518,6 +1518,7 @@ select {
 
 .task-error-detail {
     display: flex;
+    align-items: flex-start;
     gap: 10px;
     padding: 5px 0;
     font-size: 0.78rem;
@@ -1543,6 +1544,36 @@ select {
 
 .task-error-detail-list li {
     margin-bottom: 3px;
+}
+
+.task-error-value-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.task-error-value-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 4px 9px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-family: monospace;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.task-error-value-more {
+    color: var(--text-muted);
+    font-family: inherit;
+    font-weight: 600;
+    letter-spacing: 1px;
 }
 
 .task-error-actions {
@@ -1595,10 +1626,6 @@ select {
 
     .app-container {
         width: min(100% - 30px, var(--container));
-    }
-
-    .models-result {
-        grid-template-columns: 1fr;
     }
 
     .model-card-header {
@@ -1885,7 +1912,7 @@ select {
     }
 
     .task-error-detail-label {
-        flex-basis: auto;
+        flex-basis: 110px;
     }
 
     .task-error-actions {
@@ -1977,6 +2004,10 @@ select {
 
     .task-error-detail {
         font-size: 0.76rem;
+    }
+
+    .task-error-detail-label {
+        flex-basis: 95px;
     }
 
     .task-status {

@@ -236,17 +236,68 @@ function createErrorDetailsHTML(details) {
             let valueHTML;
 
             if (Array.isArray(value)) {
-                valueHTML = value.length > 0
-                    ? `
-                        <ul class="task-error-detail-list">
-                            ${value.map(item => `
-                                <li>
-                                    ${escapeHTML(String(item))}
-                                </li>
-                            `).join("")}
-                        </ul>
-                    `
-                    : "—";
+
+                if (key === "allowed_values" || key === "missing_columns"){
+                    valueHTML = value.length > 0
+                        ? `
+                            <div class="task-error-value-chips">
+                                ${value.map(item => `
+                                    <span class="task-error-value-chip">
+                                        ${escapeHTML(String(item))}
+                                    </span>
+                                `).join("")}
+                            </div>
+                        `
+                        : "—";
+                }
+                else if (key === "invalid_values" || key === "classes"){
+                    let totalCount;
+
+                    if (key === "invalid_values") {
+                        totalCount = Number(item.invalid_count);
+                    }
+                    else {
+                        totalCount = Number(item.number_of_classes);
+                    }
+
+                    const hasMoreValues = Number.isFinite(totalCount) && totalCount > value.length;
+
+                    valueHTML = value.length > 0
+                        ? `
+                            <div class="task-error-value-list">
+                                ${value.map(item => `
+                                    <span class="task-error-value">
+                                        ${escapeHTML(String(item))}
+                                    </span>
+                                `).join(", ")}
+
+                                ${
+                                    hasMoreValues
+                                        ? `
+                                            <span class="task-error-value-more">
+                                                ...
+                                            </span>
+                                        `
+                                        : ""
+                                }
+                            </div>
+                        `
+                        : "—";
+                }
+                else {
+                    valueHTML = value.length > 0
+                        ? `
+                            <div class="task-error-value-list">
+                                ${value.map(item => `
+                                    <span class="task-error-value">
+                                        ${escapeHTML(String(item))}
+                                    </span>
+                                `).join(", ")}
+                            </div>
+                        `
+                        : "—";
+                }
+
             }
             else if (value !== null && typeof value === "object") {
                 valueHTML = escapeHTML(JSON.stringify(value));
@@ -1491,9 +1542,7 @@ async function analyzeDataset(file) {
                 error: {
                     code: "CLIENT_DATA_ANALYSIS_ERROR",
                     title: "Dataset Analysis Failed",
-                    message:
-                        error.message ||
-                        "An unexpected error occurred while analyzing the dataset.",
+                    message: error.message || "An unexpected error occurred while analyzing the dataset.",
                     details: null
                 }
             }
@@ -2134,11 +2183,17 @@ function displayValidationResult(result) {
                             </td>
 
                             <td>
-                                ${feature.unique_classes}
+                                ${feature.number_of_classes}
                             </td>
 
                             <td>
-                                ${escapeHTML((feature.classes).join(", "))}
+                                ${
+                                    feature.number_of_classes > feature.classes.length
+                                        ? `
+                                            ${escapeHTML(feature.classes.join(", "))}, ...
+                                        `
+                                        : escapeHTML(feature.classes.join(", "))
+                                }
                             </td>
 
                         </tr>

@@ -3,22 +3,6 @@ import pandas as pd
 # =========================================================
 # HELPERS
 # =========================================================
-
-# Convert numeric-looking values
-def convert_numeric(value):
-    if pd.isna(value):
-        return value
-
-    try:
-        number = float(value)
-
-        if number.is_integer():
-            return int(number)
-
-        return number
-
-    except (ValueError, TypeError):
-        return value
         
 def _clean_series(series: pd.Series) -> pd.Series:
     """
@@ -26,24 +10,61 @@ def _clean_series(series: pd.Series) -> pd.Series:
     - Removing leading/trailing whitespace.
     - Replacing multiple whitespace characters with a single space.
     - Treating empty/whitespace-only strings as missing.
-    - Converting integer-looking strings to int.
-    - Converting float-looking strings to float.
-    - Leaving non-numeric strings unchanged.
+    - Converting the entire column consistently according to:
+        string > float > int
+
+    Type resolution:
+    - String + Float → all values become strings.
+    - String + Int   → all values become strings.
+    - Float + Int    → all values become floats.
+    - Only Float     → floats.
+    - Only Int       → ints.
+    - Only String    → strings.
     """
 
     cleaned = series.copy()
 
-    if (pd.api.types.is_object_dtype(cleaned) or pd.api.types.is_string_dtype(cleaned)):
-        # Clean whitespace
-        cleaned = cleaned.str.strip()
-        cleaned = cleaned.str.replace(r"\s+", " ", regex=True)
+    if not (pd.api.types.is_object_dtype(cleaned) or pd.api.types.is_string_dtype(cleaned)):
+        return cleaned
 
-        # Empty strings → missing
-        cleaned = cleaned.replace("", pd.NA)
+    # ---------------------------------------------------------
+    # Clean whitespace
+    # ---------------------------------------------------------
 
-        cleaned = cleaned.map(convert_numeric)
+    cleaned = cleaned.astype("string")
+    cleaned = cleaned.str.strip()
+    cleaned = cleaned.str.replace(r"\s+", " ", regex=True)
 
-    return cleaned
+    # Empty strings → missing
+    cleaned = cleaned.replace("", pd.NA)
+
+    # ---------------------------------------------------------
+    # Determine the type of each non-missing value
+    # ---------------------------------------------------------
+
+    non_missing = cleaned.dropna()
+
+    if non_missing.empty:
+        return cleaned
+
+    numeric_values = pd.to_numeric(non_missing, errors="coerce")
+
+    # Values that cannot be interpreted numerically are strings.
+    has_string = numeric_values.isna().any()
+
+    if has_string:
+        # String has highest priority.
+        return cleaned.astype("string")
+
+    # All non-missing values are numeric.
+    has_float = numeric_values.mod(1).ne(0).any()
+
+    if has_float:
+        # Float has priority over int.
+        return pd.to_numeric(cleaned, errors="coerce").astype(float)
+
+    # Everything is integer-like.
+    return pd.to_numeric(cleaned, errors="coerce").astype("Int64")
 
 def _stringify_values(values):
     """

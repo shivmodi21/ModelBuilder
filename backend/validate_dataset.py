@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from .config import SUPPORTED_FIELD_TYPES
 from .error_handler import api_error
+from .dataset_analysis import _clean_series
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler
 
 ALLOWED_FEATURE_ENGINEERING = {
@@ -36,49 +37,6 @@ ALLOWED_CATEGORICAL_MISSING_STRATEGIES = {
     "mode",
     "skip",
 }
-
-# =========================================================
-# CLEAN THE DATASET
-# =========================================================
-def convert_numeric(value):
-    if pd.isna(value):
-        return value
-
-    try:
-        number = float(value)
-
-        if number.is_integer():
-            return int(number)
-
-        return number
-
-    except (ValueError, TypeError):
-        return value
-
-def _clean_series(series: pd.Series) -> pd.Series:
-    """
-    Clean a Series by:
-    - Removing leading/trailing whitespace.
-    - Replacing multiple whitespace characters with a single space.
-    - Treating empty/whitespace-only strings as missing.
-    - Converting integer-looking strings to int.
-    - Converting float-looking strings to float.
-    - Leaving non-numeric strings unchanged.
-    """
-
-    cleaned = series.copy()
-
-    if (pd.api.types.is_object_dtype(cleaned) or pd.api.types.is_string_dtype(cleaned)):
-        # Clean whitespace
-        cleaned = cleaned.str.strip()
-        cleaned = cleaned.str.replace(r"\s+", " ", regex=True)
-
-        # Empty strings → missing
-        cleaned = cleaned.replace("", pd.NA)
-
-        cleaned = cleaned.map(convert_numeric)
-
-    return cleaned
 
 # =========================================================
 # FIELD CONFIGURATION VALIDATION
@@ -705,8 +663,8 @@ def get_low_repetition_warning(dataframe: pd.DataFrame, field: dict):
             "message": "This categorical feature contains no non-missing values."
         }
 
-    unique_values = (series.astype(str).unique().tolist())
-    unique_count = len(unique_values)
+    unique_classes = (series.astype(str).unique().tolist())
+    unique_count = len(unique_classes)
     unique_percentage = (unique_count / non_missing_count) * 100
 
     if unique_percentage < 10:
@@ -754,14 +712,14 @@ def calculate_one_hot_expansion(dataframe: pd.DataFrame, fields: list):
             continue
 
         field_name = field["name"]
-        unique_values = (dataframe[field_name].dropna().astype(str).unique().tolist())
-        unique_count = len(unique_values)
+        unique_classes = (dataframe[field_name].dropna().astype(str).unique().tolist())
+        unique_count = len(unique_classes)
         one_hot_column_count += (unique_count)
 
         one_hot_features.append({
             "name": field_name,
-            "unique_classes": unique_count,
-            "classes": unique_values,
+            "number_of_classes": unique_count,
+            "classes": unique_classes[:20],
             "encoding": "one_hot_encoding"
         })
 
@@ -1032,7 +990,8 @@ def positive_class_validation(positive_class, target_classes):
             message=f"Selected positive class '{positive_class}' is not one of the target classes. Select one of the available target classes as the positive class.",
             details={
                 "selected": str(positive_class),
-                "target_classes": [str(value) for value in target_classes],
+                "number_of_classes": len(target_classes),
+                "classes": [str(value) for value in target_classes],
             },
         )
 

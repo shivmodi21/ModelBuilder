@@ -29,6 +29,7 @@ from sklearn.metrics import (
 import joblib
 
 from .config import MODELS_DIR, MAX_ITERATIONS
+from .dataset_analysis import _clean_series
 
 
 def coerce_numeric(values):
@@ -48,52 +49,6 @@ MODEL_FACTORIES = {
     "knn": KNeighborsClassifier(n_neighbors=5),
     "svm": SVC(probability=True, random_state=42),
 }
-
-
-# =========================================================
-# CLEAN THE DATASET
-# =========================================================
-
-def convert_numeric(value):
-    if pd.isna(value):
-        return value
-
-    try:
-        number = float(value)
-
-        if number.is_integer():
-            return int(number)
-
-        return number
-
-    except (ValueError, TypeError):
-        return value
-
-def _clean_series(series: pd.Series) -> pd.Series:
-    """
-    Clean a Series by:
-    - Removing leading/trailing whitespace.
-    - Replacing multiple whitespace characters with a single space.
-    - Treating empty/whitespace-only strings as missing.
-    - Converting integer-looking strings to int.
-    - Converting float-looking strings to float.
-    - Leaving non-numeric strings unchanged.
-    """
-
-    cleaned = series.copy()
-
-    if (pd.api.types.is_object_dtype(cleaned) or pd.api.types.is_string_dtype(cleaned)):
-        # Clean whitespace
-        cleaned = cleaned.str.strip()
-        cleaned = cleaned.str.replace(r"\s+", " ", regex=True)
-
-        # Empty strings → missing
-        cleaned = cleaned.replace("", pd.NA)
-
-        cleaned = cleaned.map(convert_numeric)
-
-    return cleaned
-
 
 # =========================================================
 # GET CLASSIFIER
