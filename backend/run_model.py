@@ -33,8 +33,37 @@ from .dataset_analysis import _clean_series
 
 
 def coerce_numeric(values):
-    """Convert numeric-looking CSV values while preserving missing values."""
-    return values.apply(pd.to_numeric, errors="coerce")
+    """
+    Convert numeric-looking values to numeric values while
+    preserving the 2-D shape expected by scikit-learn.
+    """
+
+    if isinstance(values, pd.DataFrame):
+        return values.apply(
+            lambda column: pd.to_numeric(
+                column,
+                errors="coerce"
+            )
+        )
+
+    if isinstance(values, pd.Series):
+        return pd.to_numeric(
+            values,
+            errors="coerce"
+        )
+
+    values = np.asarray(values)
+
+    if values.ndim == 1:
+        values = values.reshape(-1, 1)
+
+    return np.column_stack([
+        pd.to_numeric(
+            values[:, column],
+            errors="coerce"
+        )
+        for column in range(values.shape[1])
+    ])
 
 
 # =========================================================
@@ -131,7 +160,7 @@ def create_preprocessor(fields):
             steps.append(("feature_engineering", FunctionTransformer(transformation, feature_names_out="one-to-one")))
 
         scaling_type = field.get("scaling", {"type": "not_found"}).get("type", "not_found")
-        if engineering_type not in transformations:
+        if scaling_type not in scalers:
             raise ValueError(f"Unsupported scaling '{scaling_type}' for feature '{field_name}'.")
 
         scaler = scalers[scaling_type]
@@ -242,6 +271,11 @@ def train_model(dataframe, fields, target_column, positive_class, model_choice, 
 
     X = X.loc[valid_rows].copy()
     y = y.loc[valid_rows].copy()
+
+    # Convert pandas nullable values (pd.NA) to NumPy-compatible
+    # missing values before passing data to scikit-learn.
+    X = X.astype(object).where(pd.notna(X), np.nan)
+    y = y.astype(object).where(pd.notna(y), np.nan)
 
     classes = sorted(y.unique(), key=lambda value: str(value))
 

@@ -1444,6 +1444,7 @@ select {
 .task-status {
     display: flex;
     align-items: center;
+    gap: 10px;
     margin-top: 15px;
     padding: 13px 15px;
     background: var(--bg);

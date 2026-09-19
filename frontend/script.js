@@ -2436,7 +2436,7 @@ function displayTrainingResult(result) {
 
     showTaskResult(trainingStatus, trainingResult, trainingError);
     
-    saveModelStatus.textContent = "✓ Training complete. Review the validation and test metrics, then save to accept this model.";
+    saveModelStatus.textContent = "The model is currently temporary. Save it to make it available in the Models tab.";
     showTaskStatus(saveModelStatus, saveModelResult, saveModelError);
     saveModelButton.disabled = false;
 }

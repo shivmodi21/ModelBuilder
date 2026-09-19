@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 
 # =========================================================
 # HELPERS
@@ -6,65 +7,109 @@ import pandas as pd
         
 def _clean_series(series: pd.Series) -> pd.Series:
     """
-    Clean a Series by:
-    - Removing leading/trailing whitespace.
-    - Replacing multiple whitespace characters with a single space.
-    - Treating empty/whitespace-only strings as missing.
-    - Converting the entire column consistently according to:
+    Clean a Series using column-level type precedence:
+
         string > float > int
 
-    Type resolution:
-    - String + Float → all values become strings.
-    - String + Int   → all values become strings.
-    - Float + Int    → all values become floats.
-    - Only Float     → floats.
-    - Only Int       → ints.
-    - Only String    → strings.
+    Rules:
+    - Integer-looking strings are treated as integers.
+    - Float-looking strings are treated as floats.
+    - String + numeric → string.
+    - Float + int → float.
+    - Only integer values → integer.
+    - Only float values → float.
+    - Missing values remain missing.
     """
 
-    cleaned = series.copy()
+    def normalize_value(value):
+        if pd.isna(value):
+            return value
 
-    if not (pd.api.types.is_object_dtype(cleaned) or pd.api.types.is_string_dtype(cleaned)):
+        if isinstance(value, str):
+            value = value.strip()
+            value = re.sub(r"\s+", " ", value)
+
+            if value == "":
+                return pd.NA
+
+            return value
+
+        return value
+
+    def classify_value(value):
+        if pd.isna(value):
+            return None
+
+        if isinstance(value, bool):
+            return "string"
+
+        if isinstance(value, float):
+            return "float"
+
+        if isinstance(value, int):
+            return "int"
+
+        if isinstance(value, str):
+            try:
+                float(value)
+            except (ValueError, TypeError):
+                return "string"
+
+            if re.fullmatch(r"[+-]?\d+", value):
+                return "int"
+
+            return "float"
+
+        try:
+            number = float(value)
+        except (ValueError, TypeError):
+            return "string"
+
+        return "int" if number.is_integer() else "float"
+
+    cleaned = series.map(normalize_value)
+
+    value_types = set()
+
+    for value in cleaned:
+        value_type = classify_value(value)
+
+        if value_type is not None:
+            value_types.add(value_type)
+
+    # ---------------------------------------------------------
+    # Resolve the type for the entire column
+    # ---------------------------------------------------------
+
+    if "string" in value_types:
+        target_type = "string"
+
+    elif "float" in value_types:
+        target_type = "float"
+
+    elif "int" in value_types:
+        target_type = "int"
+
+    else:
         return cleaned
 
     # ---------------------------------------------------------
-    # Clean whitespace
+    # Convert the entire column consistently
     # ---------------------------------------------------------
 
-    cleaned = cleaned.astype("string")
-    cleaned = cleaned.str.strip()
-    cleaned = cleaned.str.replace(r"\s+", " ", regex=True)
-
-    # Empty strings → missing
-    cleaned = cleaned.replace("", pd.NA)
-
-    # ---------------------------------------------------------
-    # Determine the type of each non-missing value
-    # ---------------------------------------------------------
-
-    non_missing = cleaned.dropna()
-
-    if non_missing.empty:
-        return cleaned
-
-    numeric_values = pd.to_numeric(non_missing, errors="coerce")
-
-    # Values that cannot be interpreted numerically are strings.
-    has_string = numeric_values.isna().any()
-
-    if has_string:
-        # String has highest priority.
+    if target_type == "string":
         return cleaned.astype("string")
 
-    # All non-missing values are numeric.
-    has_float = numeric_values.mod(1).ne(0).any()
+    if target_type == "float":
+        return pd.to_numeric(
+            cleaned,
+            errors="coerce"
+        ).astype(float)
 
-    if has_float:
-        # Float has priority over int.
-        return pd.to_numeric(cleaned, errors="coerce").astype(float)
-
-    # Everything is integer-like.
-    return pd.to_numeric(cleaned, errors="coerce").astype("Int64")
+    return pd.to_numeric(
+        cleaned,
+        errors="coerce"
+    ).astype("Int64")
 
 def _stringify_values(values):
     """
