@@ -2,7 +2,10 @@
     "model_id": "loan_approval_default",
     "model_name": "Loan Approval",
     "model_file": "loan_approval_default.pkl",
-    "model_type": "logistic_regression",
+    "model":{
+        "type": "logistic_regression",
+        "parameters": {}
+    },
     "task": "binary_classification",
     "target": {
         "name": "Loan_Status",
@@ -12,7 +15,7 @@
         ],
         "positive_class": "Y"
     },
-    "input_fields": [
+    "features": [
         {
             "id": 1788689952149.4368,
             "name": "Gender",

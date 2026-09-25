@@ -112,6 +112,14 @@ const predictButton = document.getElementById("predict-button");
 
 const modelNameInput = document.getElementById("model-name");
 const modelChoiceInput = document.getElementById("model-choice");
+
+const imbalanceMethodInput = document.getElementById("imbalance-method");
+const imbalanceParameters = document.getElementById("imbalance-parameters");
+const samplingLevelInput = document.getElementById("sampling-level");
+const imbalanceNeighborsGroup = document.getElementById("imbalance-neighbors-group");
+const imbalanceNeighborsInput = document.getElementById("imbalance-neighbors");
+const imbalanceMethodInfo = document.getElementById("imbalance-method-info");
+
 const trainingCSVInput = document.getElementById("training-csv");
 const datasetInfo = document.getElementById("dataset-info");
 const datasetAnalysisStatus = document.getElementById("dataset-analysis-status");
@@ -156,6 +164,33 @@ const saveModelButton = document.getElementById("save-model");
 const saveModelStatus = document.getElementById("save-model-status");
 const saveModelResult = document.getElementById("save-model-result");
 const saveModelError = document.getElementById("save-model-error");
+
+// APPLICATION STATE
+const inputFields = [];
+let targetCandidates = [];
+let selectedTargetClasses = [];
+
+let targetConfig = {
+    name: "",
+    positive_class: ""
+};
+
+let imbalanceConfig = {
+    method: "none",
+    parameters: {
+        sampling_level: 1.0,
+        neighbors: 5
+    }
+}
+
+let modelConfig = {
+    type: "",
+    parameters: {}
+}
+
+let datasetValidated = false;
+let currentTrainingId = null;
+let selectedModel = null;
 
 // =========================================================
 // TASK STATE
@@ -380,15 +415,6 @@ function createTaskErrorHTML(error, iconClass = "fa-circle-exclamation") {
     `;
 }
 
-// APPLICATION STATE
-const inputFields = [];
-let selectedModel = null;
-let currentTrainingId = null;
-let datasetValidated = false;
-let targetCandidates = [];
-let selectedTargetClasses = [];
-let selectedPositiveClass = "";
-
 // =========================================================
 // MODEL MANAGEMENT
 // =========================================================
@@ -490,16 +516,15 @@ function renderModels(models) {
 }
 
 function createModelCard(model) {
-    const fields = model.input_fields;
+    const features = model.features;
     const target = model.target;
     const classes = target.classes;
     const metrics = model.metrics;
     const isDeletable = model.deletable !== false;
     const task = formatModelName(model.task);
 
-
     // Input Fields
-    const fieldsHTML = fields.length > 0 ? fields.map(
+    const fieldsHTML = features.length > 0 ? features.map(
             field => `
                 <span class="model-field">
                     <span class="field-name">
@@ -549,7 +574,7 @@ function createModelCard(model) {
                     </h3>
 
                     <span class="model-type">
-                        ${formatModelName(model.model_type)}
+                        ${formatModelName(model.model.type)}
                     </span>
                 </div>
 
@@ -648,7 +673,6 @@ function createMetric(label, value) {
     if (value === undefined || value === null) {
         return "";
     }
-
 
     return `
         <div class="model-metric">
@@ -806,8 +830,8 @@ async function deleteModel(modelId) {
 // RENDER PREDICTION FORM
 function renderPredictionForm(model) {
     predictionModelName.textContent = model.model_name;
-    predictionModelDescription.textContent = `${formatModelName(model.model_type)} • Binary Classification`;
-    predictionFields.innerHTML = model.input_fields.map(field => createPredictionField(field)).join("");
+    predictionModelDescription.textContent = `${formatModelName(model.model.type)} • Binary Classification`;
+    predictionFields.innerHTML = model.features.map(field => createPredictionField(field)).join("");
     
     predictionStatus.textContent = "";
     predictionResult.innerHTML = "";
@@ -1096,6 +1120,84 @@ function displayPredictionError(result) {
     showTaskError(predictionStatus, predictionResult, predictionError);
 }
 
+// =========================================================
+// MODEL INPUT MANAGEMENT
+// =========================================================
+
+function updateImbalanceConfiguration() {
+
+    const method = imbalanceMethodInput.value;
+
+    imbalanceConfig = {
+        method: method,
+        parameters: {
+            sampling_level: Number(samplingLevelInput.value),
+            neighbors: Number(imbalanceNeighborsInput.value)
+        }
+    };
+
+    updateImbalanceUI();
+}
+
+function updateImbalanceUI() {
+
+    const method = imbalanceMethodInput.value;
+
+    const requiresParameters = method !== "none";
+
+    imbalanceParameters.classList.toggle(
+        "hidden",
+        !requiresParameters
+    );
+
+    const usesNeighbors = [
+        "smote",
+        "adasyn",
+        "smotenc",
+        "smoten"
+    ].includes(method);
+
+    imbalanceNeighborsGroup.classList.toggle(
+        "hidden",
+        !usesNeighbors
+    );
+
+    if (method === "none") {
+
+        imbalanceMethodInfo.textContent =
+            "No class imbalance handling will be applied.";
+
+    } else if (method === "random_over_sampling") {
+
+        imbalanceMethodInfo.textContent =
+            "Randomly duplicates minority-class samples.";
+
+    } else if (method === "random_under_sampling") {
+
+        imbalanceMethodInfo.textContent =
+            "Randomly removes majority-class samples.";
+
+    } else if (method === "smote") {
+
+        imbalanceMethodInfo.textContent =
+            "Generates synthetic samples for the minority class.";
+
+    } else if (method === "adasyn") {
+
+        imbalanceMethodInfo.textContent =
+            "Generates synthetic minority samples adaptively.";
+
+    } else if (method === "smotenc") {
+
+        imbalanceMethodInfo.textContent =
+            "Generates synthetic samples for datasets containing both numerical and categorical features.";
+
+    } else if (method === "smoten") {
+
+        imbalanceMethodInfo.textContent =
+            "Generates synthetic samples for categorical-only datasets.";
+    }
+}
 
 // =========================================================
 // INPUT FIELD MANAGEMENT
@@ -1708,12 +1810,13 @@ async function handleCSVSelection() {
 
 function handleTargetColumnChange() {
     const targetName = targetColumnInput.value;
-    clearError("target-column-error");
-
-    selectedPositiveClass = "";
+    
+    targetConfig.name = targetName;
+    targetConfig.positive_class = "";
     selectedTargetClasses = [];
 
     resetTargetClassSelection();
+    clearError("target-column-error");
 
     if (!targetName) {
         resetDatasetValidation();
@@ -1738,11 +1841,11 @@ function handleTargetColumnChange() {
 }
 
 function handlePositiveClassChange() {
-    selectedPositiveClass = positiveClassInput.value;
+    targetConfig.positive_class = positiveClassInput.value;
 
     clearError("positive-class-error");
 
-    if (!selectedPositiveClass) {
+    if (!targetConfig.positive_class) {
         negativeClassDisplay.textContent = "—";
         negativeClassContainer.classList.add("hidden");
 
@@ -1752,7 +1855,7 @@ function handlePositiveClassChange() {
     }
 
     // Determine negative class
-    const negativeClass = selectedTargetClasses.find(value => String(value) !== String(selectedPositiveClass));
+    const negativeClass = selectedTargetClasses.find(value => String(value) !== String(targetConfig.positive_class));
 
     negativeClassDisplay.textContent = negativeClass !== undefined ? String(negativeClass) : "—";
     negativeClassContainer.classList.remove("hidden");
@@ -1850,7 +1953,7 @@ function validatePositiveClass() {
         return false;
     }
 
-    if (!selectedPositiveClass) {
+    if (!targetConfig.positive_class) {
         setError("positive-class-error", "Please select the positive class.");
         return false;
     }
@@ -1860,7 +1963,7 @@ function validatePositiveClass() {
         return false;
     }
 
-    const valid = selectedTargetClasses.some(value => String(value) === String(selectedPositiveClass));
+    const valid = selectedTargetClasses.some(value => String(value) === String(targetConfig.positive_class));
 
     if (!valid) {
         setError("positive-class-error", "Please select a valid positive class.");
@@ -1874,7 +1977,8 @@ function validatePositiveClass() {
 
 
 function validateModelChoice() {
-    if (!modelChoiceInput.value) {
+    modelConfig.type = modelChoiceInput.value;
+    if (!modelConfig.type) {
         setError("model-choice-error", "Please select a classification model.");
         return false;
     }
@@ -1941,6 +2045,7 @@ function displayValidationResult(result) {
         return;
     }
 
+    const features = result.features;
     const target = result.target;
     const warnings = result.warnings;
     const validation = result.validation;
@@ -1948,7 +2053,7 @@ function displayValidationResult(result) {
     const oneHot = validation.one_hot_encoding;
 
     if (target.positive_class) {
-        selectedPositiveClass = String(target.positive_class);
+        targetConfig.positive_class = String(target.positive_class);
     }
 
     if (target.negative_class) {
@@ -1982,16 +2087,16 @@ function displayValidationResult(result) {
                     </div>
 
                     <div>
-                        <span>Input Columns</span>
+                        <span>Features</span>
                         <strong>
-                            ${result.input_columns?.length}
+                            ${features.name?.length}
                         </strong>
                     </div>
 
                     <div>
                         <span>Target</span>
                         <strong>
-                            ${escapeHTML(target.column)}
+                            ${escapeHTML(target.name)}
                         </strong>
                     </div>
 
@@ -2007,8 +2112,8 @@ function displayValidationResult(result) {
 
             <div class="validation-target">
                 <div>
-                    <strong>Column:</strong>
-                    ${escapeHTML(target.column)}
+                    <strong>Name:</strong>
+                    ${escapeHTML(target.name)}
                 </div>
 
                 <div>
@@ -2337,7 +2442,7 @@ function displayValidationResult(result) {
 
 function resetTargetClassSelection() {
     selectedTargetClasses = [];
-    selectedPositiveClass = "";
+    targetConfig.positive_class = "";
 
     positiveClassInput.innerHTML = `
         <option value="">
@@ -2542,18 +2647,40 @@ tabButtons.forEach((button) => {
 });
 
 
-// Models
+// Model Name
 modelNameInput.addEventListener("input", () => {
         resetDatasetValidation();
         validateConfiguration();
     }
 );
 
+// Model Choice
 modelChoiceInput.addEventListener("change",() => {
         resetDatasetValidation();
         validateConfiguration();
     }
 );
+
+// Imbalance Input
+imbalanceMethodInput.addEventListener("change", () => {
+    updateImbalanceConfiguration();
+    resetDatasetValidation();
+    validateConfiguration();
+});
+
+
+samplingLevelInput.addEventListener("change", () => {
+    updateImbalanceConfiguration();
+    resetDatasetValidation();
+    validateConfiguration();
+});
+
+
+imbalanceNeighborsInput.addEventListener("change", () => {
+    updateImbalanceConfiguration();
+    resetDatasetValidation();
+    validateConfiguration();
+});
 
 // Dataset
 trainingCSVInput.addEventListener("change", handleCSVSelection);
@@ -2629,11 +2756,11 @@ validateDatasetButton.addEventListener("click", async () => {
         const formData = new FormData();
 
         formData.append("model_name", modelNameInput.value.trim());
-        formData.append("fields", JSON.stringify(inputFields));
-        formData.append("target_column", targetColumnInput.value);
-        formData.append("positive_class", selectedPositiveClass);
-        formData.append("model_choice", modelChoiceInput.value);
         formData.append("csv_file", file);
+        formData.append("fields", JSON.stringify(inputFields));
+        formData.append("target", JSON.stringify(targetConfig));
+        formData.append("imbalance", JSON.stringify(imbalanceConfig));
+        formData.append("model", JSON.stringify(modelConfig));
 
         try {
 
@@ -2741,12 +2868,12 @@ trainModelButton.addEventListener("click", async () => {
         const formData = new FormData();
 
         formData.append("model_name", modelNameInput.value.trim());
-        formData.append("fields", JSON.stringify(inputFields));
-        formData.append("target_column", targetColumnInput.value.trim());
-        formData.append("positive_class", selectedPositiveClass);
-        formData.append("model_choice", modelChoiceInput.value);
         formData.append("csv_file", file);
-
+        formData.append("fields", JSON.stringify(inputFields));
+        formData.append("target", JSON.stringify(targetConfig));
+        formData.append("imbalance", JSON.stringify(imbalanceConfig));
+        formData.append("model", JSON.stringify(modelConfig));
+        
         try {
             // Send training request
             const response = await fetch("/api/train",
@@ -2908,7 +3035,6 @@ saveModelButton.addEventListener("click", async () => {
     }
 );
 
-
 // Prediction
 predictionFields.addEventListener("wheel", (event) => {
         if (document.activeElement && document.activeElement.type === "number") {
@@ -2926,7 +3052,7 @@ predictionFields.addEventListener("input", (event) => {
         }
 
         const input = event.target;
-        const field = selectedModel?.input_fields?.find(item => item.name === input.name);
+        const field = selectedModel?.features?.find(item => item.name === input.name);
 
         if (!field) {
             return;
@@ -2983,7 +3109,7 @@ predictionForm.addEventListener("submit", async (event) => {
         const userData = {};
         const validationErrors = [];
 
-        selectedModel.input_fields.forEach(field => {
+        selectedModel.features.forEach(field => {
             const fieldId = `prediction-${slugify(field.name)}`;
             const element = document.getElementById(fieldId);
             if (!element) {
@@ -3117,6 +3243,7 @@ predictionForm.addEventListener("submit", async (event) => {
 // INITIALIZATION
 // =========================================================
 
+updateImbalanceConfiguration();
 renderInputFields();
 validateConfiguration();
 

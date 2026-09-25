@@ -3,7 +3,10 @@
     "model_name": "Loan Approval",
     "model_file": "loan_approval.pkl",
     "model_type": "gradient_boosting",
-    "task": "binary_classification",
+    "model":{
+        "type": "binary_classification",
+        "parameters": {}
+    },
     "target": {
         "name": "Loan_Status",
         "classes": [
@@ -12,7 +15,7 @@
         ],
         "positive_class": "Y"
     },
-    "input_fields": [
+    "features": [
         {
             "id": 1788690237877.58,
             "name": "Gender",

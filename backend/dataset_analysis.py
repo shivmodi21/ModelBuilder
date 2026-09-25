@@ -1,6 +1,8 @@
 import pandas as pd
 import re
 
+from .config import NUMERICAL_UNIQUE_PERCENTAGE, MAX_NUMERICAL_UNIQUE_VALUES, SAFE_UNIQUE_PERCENTAGE
+
 # =========================================================
 # HELPERS
 # =========================================================
@@ -122,12 +124,37 @@ def _stringify_values(values):
 
     return [str(value) for value in values if not pd.isna(value)]
 
+def _normalize_column_name(column_name: str) -> str:
+    """
+    Normalize a column name for case/separator-insensitive comparison.
+
+    Examples:
+        " customer_name "  -> "Customer Name"
+        "CUSTOMER-NAME"    -> "Customer Name"
+        "Customer.Name"    -> "Customer Name"
+        "customer   name"  -> "Customer Name"
+    """
+    column = str(column_name).strip().lower()
+
+    # Convert spaces, hyphens, dots, and underscores to a single underscore
+    column = re.sub(r"[\s._-]+", "_", column)
+
+    # Remove remaining special characters
+    column = re.sub(r"[^a-z0-9_]", "", column)
+
+    # Remove leading/trailing underscores
+    column = column.strip("_")
+
+    # Convert underscore-separated words to capitalized words
+    column = column.replace("_", " ")
+
+    return column.title()
 
 # =========================================================
 # NUMERICAL COLUMN ANALYSIS
 # =========================================================
 
-def _analyze_numeric_column(series: pd.Series, non_missing_count: int, unique_count: int):
+def _analyze_numeric_column(non_missing_count: int, unique_count: int):
     """
     Analyze a column whose non-missing values are all
     numerically interpretable.
@@ -136,12 +163,12 @@ def _analyze_numeric_column(series: pd.Series, non_missing_count: int, unique_co
 
     A strict numeric column is suggested as categorical
     only when the number of unique values is fewer than
-    10 or 2% of the valid row count, whichever is lower.
+    MAX_NUMERICAL_UNIQUE_VALUES or NUMERICAL_UNIQUE_PERCENTAGE% of the valid row count, whichever is lower.
 
     Otherwise it is numerical.
     """
 
-    threshold = min(10, 0.02 * non_missing_count)
+    threshold = min(MAX_NUMERICAL_UNIQUE_VALUES, NUMERICAL_UNIQUE_PERCENTAGE * non_missing_count/100)
     suggested_categorical = (unique_count < threshold)
 
     if suggested_categorical:
@@ -164,29 +191,22 @@ def _analyze_numeric_column(series: pd.Series, non_missing_count: int, unique_co
 # CATEGORICAL / STRING COLUMN ANALYSIS
 # =========================================================
 
-def _analyze_categorical_column(series: pd.Series, non_missing_count: int, unique_count: int):
+def _analyze_categorical_column(non_missing_count: int, unique_count: int):
     """
     Analyze a column containing non-numeric/string values.
 
     Rule:
 
-    If unique values are less than 10% of the valid rows,
+    If unique values are less than SAFE_UNIQUE_PERCENTAGE% of the valid rows,
     it is a categorical feature without a warning.
 
     Otherwise it remains categorical but receives a warning
     that there is little category repetition.
     """
 
-    if non_missing_count == 0:
-        return {
-            "detected_nature": "Categorical",
-            "suggested_nature": "Categorical",
-            "suggestion":("This column contains no non-missing values.")
-        }
-
     unique_percentage = (unique_count / non_missing_count) * 100
 
-    if unique_percentage < 10:
+    if unique_percentage < SAFE_UNIQUE_PERCENTAGE:
         return {
             "detected_nature": "Categorical",
             "suggested_nature": "Categorical",
@@ -235,13 +255,13 @@ def analyze_column(dataframe: pd.DataFrame, column):
             "data_type": "empty",
             "detected_nature": "Categorical",
             "suggested_nature": "Categorical",
-            "non_missing_rows": 0,
+            "non_missing_count": 0,
             "missing_count": missing_count,
             "missing_percentage": 100.0,
             "unique_count": 0,
             "unique_values": [],
             "suggestion": ("This column contains no non-missing values."),
-            "is_binary_categorical": is_binary_categorical
+            "is_binary_categorical": False
         }
 
 
@@ -256,7 +276,7 @@ def analyze_column(dataframe: pd.DataFrame, column):
     # -----------------------------------------------------
 
     if all_numeric:
-        result = _analyze_numeric_column(series=non_missing, non_missing_count=non_missing_count, unique_count=unique_count)
+        result = _analyze_numeric_column(non_missing_count=non_missing_count, unique_count=unique_count)
 
         detected_nature = result["detected_nature"]
         suggested_nature = result["suggested_nature"]
@@ -271,7 +291,7 @@ def analyze_column(dataframe: pd.DataFrame, column):
             "data_type": "numeric",
             "detected_nature": detected_nature,
             "suggested_nature": suggested_nature,
-            "non_missing_rows": non_missing_count,
+            "non_missing_count": non_missing_count,
             "missing_count": missing_count,
             "missing_percentage": missing_per,
             "unique_count": unique_count,
@@ -284,7 +304,7 @@ def analyze_column(dataframe: pd.DataFrame, column):
     # -----------------------------------------------------
     # Mixed / string column
     # -----------------------------------------------------
-    result = _analyze_categorical_column(series=non_missing, non_missing_count=non_missing_count, unique_count=unique_count)
+    result = _analyze_categorical_column(non_missing_count=non_missing_count, unique_count=unique_count)
 
 
     # -----------------------------------------------------
@@ -301,7 +321,7 @@ def analyze_column(dataframe: pd.DataFrame, column):
         "data_type": "categorical",
         "detected_nature": result["detected_nature"],
         "suggested_nature": result["suggested_nature"],
-        "non_missing_rows": non_missing_count,
+        "non_missing_count": non_missing_count,
         "missing_count": missing_count,
         "missing_percentage": missing_per,
         "unique_count": unique_count,
@@ -338,6 +358,7 @@ def analyze_dataset(dataframe: pd.DataFrame):
     # Preserve original CSV column names exactly
     # -----------------------------------------------------
 
+    dataframe.columns = [_normalize_column_name(col) for col in dataframe.columns]
     column_names = list(dataframe.columns)
     columns_info = []
 
@@ -352,9 +373,6 @@ def analyze_dataset(dataframe: pd.DataFrame):
     target_candidates = []
 
     for column_info in columns_info:
-
-        if (column_info["detected_nature"] != "Categorical"):
-            continue
 
         if not column_info["is_binary_categorical"]:
             continue

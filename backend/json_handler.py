@@ -44,9 +44,6 @@ def delete_model(model_id: str):
 
     return True
 
-
-
-
 def create_model_id(model_name: str):
     """
     Convert a user-provided model name into a
@@ -95,11 +92,10 @@ def get_metadata_path(model_id: str) -> Path:
 def create_metadata(
     model_name: str,
     model_file: str,
-    model_type: str,
-    input_fields: list,
-    target_column: str,
-    target_classes: list,
-    positive_class: str | None = None,
+    model: dict,
+    features: list,
+    target: dict,
+    imbalance: dict,
     metrics: dict | None = None,
     model_id: str | None = None
 ):
@@ -126,14 +122,11 @@ def create_metadata(
         "model_id": model_id,
         "model_name": model_name.strip(),
         "model_file": model_file,
-        "model_type": model_type,
+        "model": model,
         "task": "binary_classification",
-        "target": {
-            "name": target_column,
-            "classes": target_classes,
-            "positive_class": positive_class
-        },
-        "input_fields": input_fields,
+        "features": features,
+        "target": target,
+        "imbalance": imbalance,
         "metrics": metrics or {},
         "deletable": True
     }

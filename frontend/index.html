@@ -307,6 +307,10 @@
                                 Support Vector Machine
                             </option>
 
+                            <option value="xgboost">
+                                XGBoost
+                            </option>
+
                         </select>
 
                         <span
@@ -314,6 +318,168 @@
                             class="field-error">
                         </span>
 
+                    </div>
+
+                </div>
+
+                <!-- ==================================
+                    STEP 3 — DATA IMBALANCE
+                =================================== -->
+
+                <div class="form-section">
+
+                    <div class="form-section-header">
+                        <span class="step-number">
+                            3
+                        </span>
+
+                        <div>
+                            <h3>Data Imbalance</h3>
+                            <p>
+                                Handle class imbalance in the training
+                                dataset.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="imbalance-method">
+                            Imbalance Method
+                        </label>
+
+                        <select
+                            id="imbalance-method"
+                            name="imbalance-method">
+
+                            <option value="none">
+                                None
+                            </option>
+
+                            <option value="random_over_sampling">
+                                Random Over Sampling
+                            </option>
+
+                            <option value="random_under_sampling">
+                                Random Under Sampling
+                            </option>
+
+                            <option value="smote">
+                                SMOTE
+                            </option>
+
+                            <option value="adasyn">
+                                ADASYN
+                            </option>
+
+                            <option value="smotenc">
+                                SMOTENC
+                            </option>
+
+                            <option value="smoten">
+                                SMOTEN
+                            </option>
+                        </select>
+
+                        <small class="form-help">
+                            Select a method to address class imbalance
+                            in the training data.
+                        </small>
+
+                        <span
+                            id="imbalance-method-error"
+                            class="field-error">
+                        </span>
+
+                    </div>
+
+                    <div
+                        id="imbalance-parameters"
+                        class="imbalance-parameters hidden">
+
+                        <!-- Sampling Level -->
+                        <div class="form-group">
+
+                            <label for="sampling-level">
+                                Sampling Level
+                            </label>
+
+                            <select
+                                id="sampling-level"
+                                name="sampling-level">
+
+                                <option value="1.00">
+                                    100%
+                                </option>
+
+                                <option value="0.75">
+                                    75%
+                                </option>
+
+                                <option value="0.50">
+                                    50%
+                                </option>
+
+                                <option value="0.25">
+                                    25%
+                                </option>
+                            </select>
+
+                            <small class="form-help">
+                                Target minority-to-majority class ratio
+                                after resampling.
+                            </small>
+
+                            <span
+                                id="sampling-level-error"
+                                class="field-error">
+                            </span>
+
+                        </div>
+
+                        <!-- Neighbors -->
+                        <div
+                            id="imbalance-neighbors-group"
+                            class="form-group">
+
+                            <label for="imbalance-neighbors">
+                                Number of Neighbors
+                            </label>
+
+                            <select
+                                id="imbalance-neighbors"
+                                name="imbalance-neighbors">
+
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5" selected>5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+
+                            </select>
+
+                            <small class="form-help">
+                                Number of neighboring samples used to
+                                generate synthetic samples.
+                            </small>
+
+                            <span
+                                id="imbalance-neighbors-error"
+                                class="field-error">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- Method compatibility information -->
+                    <div
+                        id="imbalance-method-info"
+                        class="form-help imbalance-method-info">
                     </div>
 
                 </div>

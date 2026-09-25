@@ -218,11 +218,11 @@ async def analyze_training_dataset(csv_file: UploadFile = File(...),):
 @app.post("/api/validate-dataset")
 async def validate_training_dataset(
     model_name: str = Form(...),
-    fields: str = Form(...),
-    target_column: str = Form(...),
-    positive_class: str = Form(...),
-    model_choice: str = Form(...),
     csv_file: UploadFile = File(...),
+    fields: str = Form(...),
+    target: str = Form(...),
+    imbalance: str = Form(...),
+    model: str = Form(...),
 ):
     # Validate file type
     if not csv_file or not csv_file.filename:
@@ -240,17 +240,6 @@ async def validate_training_dataset(
             message="Upload a CSV file. The selected file is not a CSV file."
         )
 
-    # Parse fields JSON
-    try:
-        fields_data = json.loads(fields)
-    except json.JSONDecodeError:
-        api_error(
-            status_code=400,
-            code="INVALID_FIELDS_JSON",
-            title="Invalid Input Configuration",
-            message="The input field configuration could not be read.",
-        )
-
     # Read CSV
     try:
         contents = await csv_file.read()
@@ -263,18 +252,94 @@ async def validate_training_dataset(
             message=str(error)
         )
 
+    # Parse fields JSON
+    try:
+        fields_data = json.loads(fields)
+    except json.JSONDecodeError:
+        api_error(
+            status_code=400,
+            code="INVALID_FIELDS_JSON",
+            title="Invalid Input Configuration",
+            message="The input field configuration could not be read.",
+        )
+
+    if not isinstance(fields_data, list):
+        api_error(
+            status_code=400,
+            code="INVALID_FIELDS_FORMAT",
+            title="Invalid Input Configuration",
+            message="The input field configuration must be provided as a list of fields."
+        )
+
+    # Parse target JSON
+    try:
+        target_data = json.loads(target)
+    except json.JSONDecodeError:
+        api_error(
+            status_code=400,
+            code="INVALID_TARGET_FORMAT",
+            title="Invalid Target Configuration",
+            message="The target configuration is not valid JSON.",
+        )
+
+    if not isinstance(target_data, dict):
+        api_error(
+            status_code=400,
+            code="INVALID_TARGET_FORMAT",
+            title="Invalid Target Configuration",
+            message="Target configuration must be a JSON object.",
+        )
+
+    # Parse imbalance JSON
+    try:
+        imbalance_data = json.loads(imbalance)
+    except json.JSONDecodeError:
+        api_error(
+            status_code=400,
+            code="INVALID_IMBALANCE_FORMAT",
+            title="Invalid Imbalance Configuration",
+            message="The imbalance configuration is not valid JSON.",
+        )
+
+    if not isinstance(imbalance_data, dict):
+        api_error(
+            status_code=400,
+            code="INVALID_IMBALANCE_FORMAT",
+            title="Invalid Imbalance Configuration",
+            message="Imbalance configuration must be a JSON object.",
+        )
+
+    # Parse model JSON
+    try:
+        model_data = json.loads(model)
+    except json.JSONDecodeError:
+        api_error(
+            status_code=400,
+            code="INVALID_MODEL_FORMAT",
+            title="Invalid Model Configuration",
+            message="The model configuration is not valid JSON.",
+        )
+
+    if not isinstance(model_data, dict):
+        api_error(
+            status_code=400,
+            code="INVALID_MODEL_FORMAT",
+            title="Invalid Model Configuration",
+            message="Model configuration must be a JSON object.",
+        )
+
     # Validate configuration + dataset
     try:
         validation_result = validate_dataset(
             dataframe=dataframe,
             fields=fields_data,
-            target_column=target_column,
-            positive_class=positive_class
+            target=target_data,
+            imbalance=imbalance_data
         )
 
         validation_result["message"] = "Dataset is valid for training."
         validation_result["model_name"] = model_name.strip()
-        validation_result["model_choice"] = model_choice
+        validation_result["model_type"] = model_data["type"]
 
     except HTTPException:
         raise
@@ -296,12 +361,12 @@ async def validate_training_dataset(
 
 @app.post("/api/train")
 async def train_endpoint(
+    model_name: str = Form(...),
     csv_file: UploadFile = File(...),
     fields: str = Form(...),
-    target_column: str = Form(...),
-    positive_class: str = Form(...),
-    model_choice: str = Form(...),
-    model_name: str = Form(...)
+    target: str = Form(...),
+    imbalance: str = Form(...),
+    model: str = Form(...),
 ):
     # 1. Validate CSV file
     if not csv_file or not csv_file.filename:
@@ -350,13 +415,69 @@ async def train_endpoint(
             message="The input field configuration must be provided as a list of fields."
         )
 
+    try:
+        target_data = json.loads(target)
+    except json.JSONDecodeError:
+        api_error(
+            status_code=400,
+            code="INVALID_TARGET_FORMAT",
+            title="Invalid Target Configuration",
+            message="The target configuration is not valid JSON.",
+        )
+
+    if not isinstance(target_data, dict):
+        api_error(
+            status_code=400,
+            code="INVALID_TARGET_FORMAT",
+            title="Invalid Target Configuration",
+            message="Target configuration must be a JSON object.",
+        )
+
+    # Parse imbalance configuration
+    try:
+        imbalance_data = json.loads(imbalance)
+    except json.JSONDecodeError:
+        api_error(
+            status_code=400,
+            code="INVALID_IMBALANCE_FORMAT",
+            title="Invalid Imbalance Configuration",
+            message="The imbalance configuration is not valid JSON.",
+        )
+
+    if not isinstance(imbalance_data, dict):
+        api_error(
+            status_code=400,
+            code="INVALID_IMBALANCE_FORMAT",
+            title="Invalid Imbalance Configuration",
+            message="Imbalance configuration must be a JSON object.",
+        )
+
+    # Parse model configuration
+    try:
+        model_data = json.loads(model)
+    except json.JSONDecodeError:
+        api_error(
+            status_code=400,
+            code="INVALID_MODEL_FORMAT",
+            title="Invalid Model Configuration",
+            message="The model configuration is not valid JSON.",
+        )
+
+    if not isinstance(model_data, dict):
+        api_error(
+            status_code=400,
+            code="INVALID_MODEL_FORMAT",
+            title="Invalid Model Configuration",
+            message="Model configuration must be a JSON object.",
+        )
+
     # 4. Validate dataset
     try:
         validation_result = validate_dataset(
             dataframe=dataframe,
             fields=fields_data,
-            target_column=target_column,
-            positive_class=positive_class
+            target=target_data,
+            imbalance=imbalance_data,
         )
     except HTTPException:
         # Preserve structured validation errors for the frontend.
@@ -376,20 +497,17 @@ async def train_endpoint(
     #   nature
     #   feature_engineering
     #   options (categorical)
-    enriched_fields = validation_result["input_fields"]
-
+    features = validation_result["features"]["info"]
 
     # 6. Train model
     try:
         training_result = train_model(
             dataframe=dataframe,
-            fields=enriched_fields,
-            target_column=target_column,
-            positive_class=positive_class,
-            model_choice=model_choice,
+            fields=features,
+            target=target_data,
+            imbalance=imbalance_data,
+            model=model_data
         )
-        model = training_result["model"]
-        metrics = training_result["metrics"]
 
     except ValueError as error:
         api_error(
@@ -409,26 +527,25 @@ async def train_endpoint(
 
 
     training_id = str(uuid.uuid4())
+    target_data["target_classes"] = training_result["target_classes"]
 
     trained_models[training_id] = {
-        "model": model,
-        "metrics": metrics,
         "model_name": model_name.strip(),
-        "model_type": model_choice,
-        "fields": enriched_fields,
-        "target_column": target_column,
-        "target_classes": training_result["target_classes"],
-        "positive_class": positive_class,
+        "model": model_data,
+        "features": features,
+        "target": target_data,
+        "imbalance": imbalance_data,
+        "model_pipeline": training_result["model_pipeline"],
+        "metrics": training_result["metrics"],
     }
-
 
     return {
         "success": True,
         "message": "Model trained successfully.",
         "training_id": training_id,
         "model_name": model_name.strip(),
-        "model_type": model_choice,
-        "metrics": metrics,
+        "model_type": model_data["type"],
+        "metrics": training_result["metrics"],
         "train_rows": training_result["train_rows"],
         "validation_rows": training_result["validation_rows"],
         "test_rows": training_result["test_rows"],
@@ -465,7 +582,7 @@ async def save_model_endpoint(training_id: str = Form(...),):
 
     # Save model
     try:
-        model_path = save_trained_model(model=training["model"], model_id=model_id,)
+        model_path = save_trained_model(model=training["model_pipeline"], model_id=model_id,)
     except FileExistsError as error:
         api_error(
             status_code=409,
@@ -486,11 +603,10 @@ async def save_model_endpoint(training_id: str = Form(...),):
         metadata = create_metadata(
             model_name=training["model_name"],
             model_file=model_path.name,
-            model_type=training["model_type"],
-            input_fields=training["fields"],
-            target_column=training["target_column"],
-            target_classes=training["target_classes"],
-            positive_class=training["positive_class"],
+            model=training["model"],
+            features=training["features"],
+            target=training["target"],
+            imbalance=training["imbalance"],
             metrics=training["metrics"],
             model_id=model_id,
         )
@@ -562,7 +678,7 @@ async def predict_endpoint(model_id: str = Form(...), input_data: str = Form(...
         )
     
     # Validate fields
-    expected_fields = [field["name"] for field in metadata.get("input_fields", [])]
+    expected_fields = [field["name"] for field in metadata.get("features", [])]
     missing_fields = [field for field in expected_fields if field not in user_data]
 
     if missing_fields:

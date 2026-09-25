@@ -2,7 +2,10 @@
     "model_id": "insurance_claim_default",
     "model_name": "Insurance Claim",
     "model_file": "insurance_claim_default.pkl",
-    "model_type": "gradient_boosting",
+    "model":{
+        "type": "gradient_boosting",
+        "parameters": {}
+    },
     "task": "binary_classification",
     "target": {
         "name": "fraud_reported",
@@ -12,7 +15,7 @@
         ],
         "positive_class": "N"
     },
-    "input_fields": [
+    "features": [
         {
             "id": 1789294605984.952,
             "name": "months_as_customer",

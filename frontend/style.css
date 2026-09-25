@@ -564,6 +564,27 @@ select {
 }
 
 /* =========================================================
+   DATA IMBALANCE
+========================================================= */
+
+.imbalance-parameters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 4px;
+}
+
+.imbalance-parameters.hidden {
+    display: none;
+}
+
+.imbalance-method-info {
+    display: block;
+    margin-top: 4px;
+    line-height: 1.5;
+}
+
+/* =========================================================
    10. DYNAMIC INPUT FIELDS
 ========================================================= */
 
@@ -1655,6 +1676,10 @@ select {
 
     .model-card .model-metrics {
         grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .imbalance-parameters {
+        grid-template-columns: 1fr;
     }
 
     .input-fields-header {
