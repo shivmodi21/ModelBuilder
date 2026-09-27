@@ -467,7 +467,7 @@ FastAPI also provides automatically generated API documentation through its stan
 A simplified project structure is:
 
 ```text
-LoanApproval/
+ModelBuilder/
 │
 ├── frontend/
 │   ├── index.html
@@ -545,7 +545,7 @@ Upload a CSV containing a binary classification target.
 Example:
 
 ```text
-loan_dataset.csv
+loan_approval.csv
 ```
 
 ### Step 2 — Analyze
@@ -725,9 +725,6 @@ Current limitations include:
 * No cloud deployment configuration
 * CORS is currently permissive for local development
 * Training sessions are temporarily stored in backend memory
-* Some legacy Loan Approval preprocessing remains separately handled
-
-The legacy transformation layer exists to support an earlier Loan Approval model while the newer models use metadata-driven scikit-learn pipelines.
 
 These limitations are intentional opportunities for future development rather than hidden assumptions.
 
@@ -807,3 +804,14 @@ User Interface
 The project therefore focuses not only on model selection, but also on **software architecture, data validation, reproducibility, preprocessing consistency, API design, model persistence, and user-facing inference**.
 
 ---
+
+## Author
+
+**Shiv Modi**
+B Tech and M Tech - IIT Bombay
+
+```text
+GitHub: https://github.com/shivmodi21
+Portfolio: https://shivmodi21.github.io/
+LinkedIn: https://www.linkedin.com/in/shivmodi210/
+```
