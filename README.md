@@ -10,7 +10,7 @@ The project combines a vanilla HTML/CSS/JavaScript frontend with a Python/FastAP
 
 # 🚀 Try it here ...
 
-https://modelbuilder.onrender.com/
+[Model Builder](https://modelbuilder.onrender.com/)
 
 Hosted on Render (For Demo)
 
