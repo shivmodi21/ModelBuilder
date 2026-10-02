@@ -807,11 +807,5 @@ The project therefore focuses not only on model selection, but also on **softwar
 
 ## Author
 
-**Shiv Modi**
-B Tech and M Tech - IIT Bombay
-
-```text
-GitHub: https://github.com/shivmodi21
-Portfolio: https://shivmodi21.github.io/
-LinkedIn: https://www.linkedin.com/in/shivmodi210/
-```
+**Shiv Modi** — B.Tech. + M.Tech., IIT Bombay  
+[GitHub](https://github.com/shivmodi21) · [Portfolio](https://shivmodi21.github.io/) · [LinkedIn](https://www.linkedin.com/in/shivmodi210/)
