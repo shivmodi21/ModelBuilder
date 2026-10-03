@@ -662,6 +662,67 @@ select {
     opacity: 0.5;
 }
 
+/* ==========================================
+   INPUT FIELD ANALYSIS MESSAGE
+========================================== */
+.input-field-analysis-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+    margin-top: 2px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+
+    color: var(--warning);
+    background: var(--warning-background);
+    border: 1px solid rgba(211, 153, 34, 0.25);
+    border-radius: 7px;
+
+    font-size: 0.82rem;
+    line-height: 1.5;
+
+    grid-column: 1 / -1;
+}
+
+.input-field-analysis-message i {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--warning);
+}
+
+.input-field-analysis-message span {
+    min-width: 0;
+    color: var(--warning);
+}
+
+.input-field-unique-values {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+    margin-top: 0;
+    box-sizing: border-box;
+
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+
+    grid-column: 1 / -1;
+}
+
+.input-field-unique-label {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.input-field-unique-list {
+    min-width: 0;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+}
+
 .remove-field-button {
     display: flex;
     align-items: center;
@@ -816,6 +877,75 @@ select {
     color: var(--text);
     font-size: 0.9rem;
     font-weight: 600;
+}
+
+/* Column statistics */
+
+.dataset-analysis-statistics {
+    width: 100%;
+    margin-top: 20px;
+}
+
+.dataset-analysis-section-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 10px;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.dataset-analysis-section-title i {
+    color: var(--primary);
+}
+
+.dataset-analysis-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+}
+
+.dataset-analysis-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.8rem;
+}
+
+.dataset-analysis-table th,
+.dataset-analysis-table td {
+    padding: 11px 13px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+.dataset-analysis-table th {
+    background: var(--card);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.dataset-analysis-table td {
+    color: var(--text);
+}
+
+.dataset-analysis-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.dataset-analysis-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.dataset-analysis-column-name {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* =========================================================

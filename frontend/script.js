@@ -1516,6 +1516,46 @@ function renderInputFields() {
         row.appendChild(scalingEncodingGroup);
         row.appendChild(removeButton);
 
+        // ANALYSIS INFORMATION
+        const analysis = field.analysis;
+
+        if (analysis) {
+            // Unique values — categorical fields only
+            if (field.nature === "Categorical" && Array.isArray(analysis.unique_values) && analysis.unique_values.length > 0) {
+                const uniqueValues = analysis.unique_values.slice(0, 3).map(value => escapeHTML(String(value))).join(", ");
+                const uniqueValuesSuffix = analysis.unique_values.length > 3 ? "... " : "";
+                const uniqueValuesMessage = document.createElement("div");
+                uniqueValuesMessage.className = "input-field-unique-values";
+                uniqueValuesMessage.innerHTML = `
+                    <span class="input-field-unique-label">
+                        Unique values:
+                    </span>
+
+                    <span class="input-field-unique-list">
+                        ${uniqueValues} ${uniqueValuesSuffix}
+                    </span>
+                `;
+                row.appendChild(uniqueValuesMessage);
+            }
+
+            // Analysis suggestion
+            if (analysis.suggestion) {
+                const suggestion = document.createElement("div");
+                suggestion.className = "input-field-analysis-message";
+                suggestion.innerHTML = `
+                    <i
+                        class="fa-solid fa-lightbulb"
+                        aria-hidden="true">
+                    </i>
+
+                    <span>
+                        ${escapeHTML(analysis.suggestion)}
+                    </span>
+                `;
+                row.appendChild(suggestion);
+            }
+        }
+
         inputFieldsContainer.appendChild(row);
     });
 
@@ -1525,7 +1565,7 @@ function renderInputFields() {
 // DATASET ANALYSIS
 // =========================================================
 
-function displayAnalysisResult(result){
+function displayAnalysisResult(result) {
     const analysis = result.analysis;
     const totalColumns = analysis.columns ?? 0;
     const totalRows = analysis.rows ?? 0;
@@ -1546,13 +1586,12 @@ function displayAnalysisResult(result){
         <div class="dataset-analysis-grid">
             <div class="dataset-analysis-item">
                 <span>
-                    Total available features
+                    Total available features (excluding target column)
                 </span>
 
                 <strong>
-                    ${totalColumns}
+                    ${totalColumns - 1}
                 </strong>
-
             </div>
 
             <div class="dataset-analysis-item">
@@ -1594,6 +1633,55 @@ function displayAnalysisResult(result){
                     ${possibleTargetColumns}
                 </strong>
             </div>
+
+        </div>
+
+        <div class="dataset-analysis-statistics">
+
+            <div class="dataset-analysis-section-title">
+                <i class="fa-solid fa-table-list" aria-hidden="true"></i>
+                Column Statistics
+            </div>
+
+            <div class="dataset-analysis-table-wrapper">
+
+                <table class="dataset-analysis-table">
+
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Missing Values</th>
+                            <th>Missing %</th>
+                            <th>Unique Values</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        ${columnsInfo.map(column => `
+                            <tr>
+                                <td class="dataset-analysis-column-name">
+                                    ${escapeHTML(column.name)}
+                                </td>
+
+                                <td>
+                                    ${Number(column.missing_count ?? null).toLocaleString()}
+                                </td>
+
+                                <td>
+                                    ${Number(column.missing_percentage ?? null).toFixed(2)}%
+                                </td>
+
+                                <td>
+                                    ${Number(column.unique_count ?? null).toLocaleString()}
+                                </td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+
+                </table>
+
+            </div>
+
         </div>
     `;
 
@@ -1667,14 +1755,22 @@ function populateFieldsFromAnalysis(result) {
     inputFields.length = 0;
 
     result.columns_info.forEach(column => {
-            const nature = column.suggested_nature;
-            const field = createDefaultField(column.name);
-            field.nature = nature;
-            applyNatureDefaults(field);
+        const nature = column.suggested_nature;
+        const field = createDefaultField(column.name);
+        field.nature = nature;
 
-            inputFields.push(field);
-        }
-    );
+        // Store analysis information for UI display
+        field.analysis = {
+            suggestion: column.suggestion ?? "",
+            unique_values: Array.isArray(column.unique_values)
+                ? column.unique_values
+                : []
+        };
+
+        applyNatureDefaults(field);
+
+        inputFields.push(field);
+    });
 
     populateTargetColumns(result.target_candidates);
     renderInputFields();
@@ -2618,6 +2714,18 @@ function escapeHTML(value) {
     return element.innerHTML;
 }
 
+
+function getFieldsForAPI() {
+    return inputFields.map(field => {
+        const {
+            analysis,
+            ...fieldConfig
+        } = field;
+
+        return fieldConfig;
+    });
+}
+
 // =========================================================
 //EVENT LISTENERS
 // =========================================================
@@ -2757,7 +2865,7 @@ validateDatasetButton.addEventListener("click", async () => {
 
         formData.append("model_name", modelNameInput.value.trim());
         formData.append("csv_file", file);
-        formData.append("fields", JSON.stringify(inputFields));
+        formData.append("fields", JSON.stringify(getFieldsForAPI()));
         formData.append("target", JSON.stringify(targetConfig));
         formData.append("imbalance", JSON.stringify(imbalanceConfig));
         formData.append("model", JSON.stringify(modelConfig));
@@ -2869,7 +2977,7 @@ trainModelButton.addEventListener("click", async () => {
 
         formData.append("model_name", modelNameInput.value.trim());
         formData.append("csv_file", file);
-        formData.append("fields", JSON.stringify(inputFields));
+        formData.append("fields", JSON.stringify(getFieldsForAPI()));
         formData.append("target", JSON.stringify(targetConfig));
         formData.append("imbalance", JSON.stringify(imbalanceConfig));
         formData.append("model", JSON.stringify(modelConfig));

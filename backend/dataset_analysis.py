@@ -283,7 +283,7 @@ def analyze_column(dataframe: pd.DataFrame, column):
 
         categorical_values = []
 
-        if suggested_nature == "Categorial":
+        if suggested_nature == "Categorical":
             categorical_values = _stringify_values(unique_values)
 
         return {
