@@ -2124,14 +2124,14 @@ function displayValidationError(result) {
 function displayValidationResult(result) {
     console.log("Dataset validation response:", result);
 
-    // Make sure backend returned dataset information
+    // Validate response
     if (!result) {
         console.error("Dataset validation response is empty");
         displayValidationError({
             detail: {
                 success: false,
                 error: {
-                    code: "CLIENT_DATA_VALIDATOIN_ERROR",
+                    code: "CLIENT_DATA_VALIDATION_ERROR",
                     title: "Dataset Validation Failed",
                     message: "Dataset validation response is empty.",
                     details: null
@@ -2141,18 +2141,28 @@ function displayValidationResult(result) {
         return;
     }
 
-    const features = result.features;
-    const target = result.target;
-    const warnings = result.warnings;
-    const validation = result.validation;
-    const fieldValidation = validation.fields;
-    const oneHot = validation.one_hot_encoding;
+    // ---------------------------------------------------------
+    // Extract validation data
+    // ---------------------------------------------------------
+    const rows = Number(result.rows ?? 0);
+    const columns = Number(result.columns ?? 0);
+    const features = Array.isArray(result.features) ? result.features : [];
+    const target = result.target ?? {};
+    const ignoredColumns = Array.isArray(result.ignored_columns) ? result.ignored_columns : [];
+    const missingValueValidation = Array.isArray(result.missing_value_validation) ? result.missing_value_validation : [];
+    const categoricalValidation = Array.isArray(result.categorical_validation) ? result.categorical_validation : [];
+    const classImbalanceValidation = Array.isArray(result.class_imbalance_validation) ? result.class_imbalance_validation : [];
+    const validationWarnings = Array.isArray(result.validation_warnings) ? result.validation_warnings : [];
 
-    if (target.positive_class) {
+    // ---------------------------------------------------------
+    // Update target state
+    // ---------------------------------------------------------
+
+    if (target.positive_class !== undefined && target.positive_class !== null) {
         targetConfig.positive_class = String(target.positive_class);
     }
 
-    if (target.negative_class) {
+    if (target.negative_class !== undefined && target.negative_class !== null) {
         negativeClassDisplay.textContent = String(target.negative_class);
         negativeClassContainer.classList.remove("hidden");
     }
@@ -2160,10 +2170,11 @@ function displayValidationResult(result) {
     // Build report
     let reportHTML = `
         <div class="validation-report">
-
             <div class="validation-summary">
                 <div class="validation-summary-title">
-                    ✓ Dataset Valid
+                    <i class="fa-solid fa-circle-check"
+                       aria-hidden="true"></i>
+                    Dataset Valid
                 </div>
 
                 <div class="validation-summary-grid">
@@ -2171,28 +2182,28 @@ function displayValidationResult(result) {
                     <div>
                         <span>Rows</span>
                         <strong>
-                            ${result.rows}
+                            ${rows.toLocaleString()}
                         </strong>
                     </div>
 
                     <div>
                         <span>CSV Columns</span>
                         <strong>
-                            ${result.columns}
+                            ${columns.toLocaleString()}
                         </strong>
                     </div>
 
                     <div>
                         <span>Features</span>
                         <strong>
-                            ${features.name?.length}
+                            ${features.length.toLocaleString()}
                         </strong>
                     </div>
 
                     <div>
                         <span>Target</span>
                         <strong>
-                            ${escapeHTML(target.name)}
+                            ${escapeHTML(target.name ?? "-")}
                         </strong>
                     </div>
 
@@ -2200,170 +2211,51 @@ function displayValidationResult(result) {
             </div>
     `;
 
-
-    // Target information
+    // TARGET INFORMATION
     reportHTML += `
         <div class="validation-section">
-            <h4>Target</h4>
+
+            <h4>
+                <i class="fa-solid fa-bullseye"
+                   aria-hidden="true"></i>
+                Target
+            </h4>
 
             <div class="validation-target">
                 <div>
                     <strong>Name:</strong>
-                    ${escapeHTML(target.name)}
+                    ${escapeHTML(target.name ?? "-")}
                 </div>
 
                 <div>
                     <strong>Classes:</strong>
-                    ${escapeHTML(target.classes?.join(", "))}
+                    ${Array.isArray(target.classes) ? escapeHTML(target.classes.join(", ")) : "-"}
                 </div>
 
                 <div>
                     <strong>Positive class:</strong>
-                    ${escapeHTML(target.positive_class)}
+                    ${escapeHTML(target.positive_class ?? "-")}
                 </div>
 
                 <div>
                     <strong>Negative class:</strong>
-                    ${escapeHTML(target.negative_class)}
+                    ${escapeHTML(target.negative_class ?? "-")}
                 </div>
             </div>
         </div>
     `;
 
-    // Field validation
-    if (fieldValidation.length > 0) {
+    // MISSING VALUE VALIDATION
+    if (missingValueValidation.length > 0) {
 
         reportHTML += `
             <div class="validation-section">
-                <h4>Input Field Validation</h4>
 
-                <div class="validation-table-wrapper">
-                    <table class="validation-table input-validation-table">
-                        <thead>
-                            <tr>
-                                <th>Input Field</th>
-                                <th>Nature</th>
-                                <th>Numerical Values</th>
-                                <th>Missing Values</th>
-                                <th>Feature Engineering</th>
-                                <th>Scaling</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-
-        fieldValidation.forEach(
-            field => {
-
-                reportHTML += `
-                    <tr>
-                        <td class="validation-field-name">
-                            ${escapeHTML(field.field)}
-                        </td>
-
-                        <td>
-                            <span class="validation-nature">
-                                ${escapeHTML(field.nature)}
-                            </span>
-                        </td>
-
-                        <td class="validation-status-cell">
-                            <span class="validation-pass">
-                                ✓
-                            </span>
-                        </td>
-
-                        <td class="validation-status-cell">
-                            <span class="validation-pass">
-                                ✓
-                            </span>
-                        </td>
-
-                        <td class="validation-status-cell">
-                            <span class="validation-pass">
-                                ✓
-                            </span>
-                        </td>
-
-                        <td class="validation-status-cell">
-                            <span class="validation-pass">
-                                ✓
-                            </span>
-                        </td>
-
-                    </tr>
-                `;
-            }
-        );
-
-        reportHTML += `
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-
-    // One-hot encoding
-    if (oneHot && oneHot.original_columns !== undefined) {
-        const increase = Number(oneHot.increase_percentage);
-        const oneHotWarning = increase > 100;
-
-        reportHTML += `
-            <div class="validation-section">
-                <h4>Feature Expansion</h4>
-
-                <div class="validation-expansion">
-
-                    <div>
-                        <span>Original features</span>
-                        <strong>
-                            ${oneHot.original_columns}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Final features</span>
-                        <strong>
-                            ${oneHot.final_columns}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Columns added</span>
-                        <strong>
-                            ${oneHot.columns_added}
-                        </strong>
-                    </div>
-
-                    <div class="${oneHotWarning ? "validation-warning-value" : ""}">
-                        <span>Increase</span>
-                        <strong>
-                            ${increase}%
-                        </strong>
-                    </div>
-                </div>
-        `;
-
-        // One-hot warning class table
-        if (oneHotWarning && Array.isArray(oneHot.one_hot_features)) {
-
-            reportHTML += `
-                <div class="validation-warning">
-
-                    <div class="validation-warning-title">
-                        ⚠ High One-Hot Expansion
-                    </div>
-
-                    <p>
-                        One-hot encoding will increase
-                        the feature count by more than
-                        100%. Consider using Label
-                        Encoding for high-cardinality
-                        categorical features.
-                    </p>
-
-                </div>
+                <h4>
+                    <i class="fa-solid fa-filter-circle-check"
+                       aria-hidden="true"></i>
+                    Missing Value Validation
+                </h4>
 
                 <div class="validation-table-wrapper">
 
@@ -2372,124 +2264,277 @@ function displayValidationResult(result) {
                         <thead>
                             <tr>
                                 <th>Feature</th>
-                                <th>Classes</th>
+                                <th>Missing Values</th>
+                                <th>Strategy</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        missingValueValidation.forEach(field => {
+            const missingCount = Number(field.missing_count ?? 0);
+            const remainingMissing = Number(field.remaining_missing ?? 0);
+            const applied = Boolean(field.applied);
+
+            let resultHTML;
+
+            if (remainingMissing === 0) {
+                resultHTML = `
+                    <span class="validation-pass">
+                        ✓
+                    </span>
+                `;
+            } else {
+                resultHTML = `
+                    <span class="validation-fail">
+                        ✕
+                    </span>
+                `;
+            }
+
+            reportHTML += `
+                <tr>
+                    <td class="validation-field-name">
+                        ${escapeHTML(field.field ?? "-")}
+                    </td>
+                    <td>
+                        ${missingCount.toLocaleString()}
+                    </td>
+                    <td>
+                        ${escapeHTML(field.strategy ?? "-")}
+                    </td>
+                    <td class="validation-status-cell">
+                        ${resultHTML}
+                    </td>
+                </tr>
+            `;
+        });
+
+        reportHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    // CATEGORICAL VALIDATION
+    if (categoricalValidation.length > 0) {
+
+        reportHTML += `
+            <div class="validation-section">
+
+                <h4>
+                    <i class="fa-solid fa-tags"
+                       aria-hidden="true"></i>
+                    Categorical Validation
+                </h4>
+
+                <div class="validation-table-wrapper">
+
+                    <table class="validation-table">
+
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Encoding</th>
                                 <th>Unique Values</th>
+                                <th>Unique %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        categoricalValidation.forEach(field => {
+            const uniqueCount = Number(field.unique_count ?? 0);
+            const uniquePercentage = Number(field.unique_percentage ?? 0);
+
+            reportHTML += `
+                <tr>
+                    <td class="validation-field-name">
+                        ${escapeHTML(field.field ?? "-")}
+                    </td>
+                    <td>
+                        ${escapeHTML(field.encoding_type ?? "-")}
+                    </td>
+                    <td>
+                        ${uniqueCount.toLocaleString()}
+                    </td>
+                    <td>
+                        ${uniquePercentage.toFixed(2)}%
+                    </td>
+                </tr>
+            `;
+        });
+
+        reportHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    // CLASS IMBALANCE
+    if (classImbalanceValidation.length > 0) {
+
+        reportHTML += `
+            <div class="validation-section">
+
+                <h4>
+                    <i class="fa-solid fa-scale-balanced"
+                       aria-hidden="true"></i>
+                    Class Distribution
+                </h4>
+
+                <div class="validation-table-wrapper">
+
+                    <table class="validation-table">
+
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Count</th>
+                                <th>Percentage</th>
+                                <th>Positive</th>
                             </tr>
                         </thead>
 
                         <tbody>
-            `;
+        `;
 
-
-            oneHot.one_hot_features.forEach(
-                feature => {
-                    reportHTML += `
-                        <tr>
-
-                            <td>
-                                ${escapeHTML(feature.name)}
-                            </td>
-
-                            <td>
-                                ${feature.number_of_classes}
-                            </td>
-
-                            <td>
-                                ${
-                                    feature.number_of_classes > feature.classes.length
-                                        ? `
-                                            ${escapeHTML(feature.classes.join(", "))}, ...
-                                        `
-                                        : escapeHTML(feature.classes.join(", "))
-                                }
-                            </td>
-
-                        </tr>
-                    `;
-                }
-            );
+        classImbalanceValidation.forEach(classInfo => {
+            const count = Number(classInfo.count ?? 0);
+            const percentage = Number(classInfo.percentage ?? 0);
+            const isPositive = Boolean(classInfo.is_positive);
 
             reportHTML += `
+                <tr>
+                    <td class="validation-field-name">
+                        ${escapeHTML(classInfo.class ?? "-")}
+                    </td>
+                    <td>
+                        ${count.toLocaleString()}
+                    </td>
+                    <td>
+                        ${percentage.toFixed(2)}%
+                    </td>
+                    <td class="validation-status-cell">
+                        ${
+                            isPositive
+                                ? `
+                                    <span class="validation-pass">
+                                        ✓
+                                    </span>
+                                  `
+                                : `
+                                    <span class="validation-muted">
+                                        —
+                                    </span>
+                                  `
+                        }
+
+                    </td>
+                </tr>
+            `;
+        });
+
+        reportHTML += `
                         </tbody>
                     </table>
                 </div>
-            `;
-        }
-
-        reportHTML += `
             </div>
         `;
     }
 
-    // Warnings
-    if (warnings.length > 0) {
-
+    // WARNINGS
+    if (validationWarnings.length > 0) {
         reportHTML += `
             <div class="validation-section">
                 <h4>
+                    <i class="fa-solid fa-triangle-exclamation"
+                       aria-hidden="true"></i>
                     Warnings
                     <span class="warning-count">
-                        ${warnings.length}
+                        ${validationWarnings.length}
                     </span>
                 </h4>
         `;
 
-        warnings.forEach(
-            warning => {
+        validationWarnings.forEach(warning => {
+            const warningField = warning.field || warning.name || "Dataset";
+            const warningMessage = warning.message || warning.warning_message || "Review this validation warning.";
 
+            reportHTML += `
+                <div class="validation-warning">
+                    <div class="validation-warning-title">
+                        <i class="fa-solid fa-triangle-exclamation"
+                           aria-hidden="true"></i>
+                        ${escapeHTML(warningField)}
+                    </div>
+                    <p>
+                        ${escapeHTML(warningMessage)}
+                    </p>
+            `;
+
+            if (warning.unique_count !== undefined) {
                 reportHTML += `
-                    <div class="validation-warning">
-
-                        <div class="validation-warning-title">
-                            ⚠ ${escapeHTML(warning.field || "Dataset")}
-                        </div>
-
-                        <p>
-                            ${escapeHTML(warning.message)}
-                        </p>
-                `;
-
-
-                if (warning.unique_count !== undefined) {
-
-                    reportHTML += `
-                        <div class="warning-details">
-                            Unique values:
-                            <strong>
-                                ${warning.unique_count}
-                            </strong>
-
-                            /
-                            
-                            ${warning.non_missing_count}
-                            non-missing rows
-
-                            (${warning.unique_percentage}%)
-                        </div>
-                    `;
-                }
-
-                reportHTML += `
+                    <div class="warning-details">
+                        Unique values:
+                        <strong>
+                            ${Number(warning.unique_count).toLocaleString()}
+                        </strong>
+                        /
+                        ${Number(warning.non_missing_count ?? 0).toLocaleString()}
+                        non-missing rows
+                        (${Number(warning.unique_percentage ?? 0).toFixed(2)}%)
                     </div>
                 `;
             }
-        );
+
+            if (warning.majority_percentage !== undefined) {
+                reportHTML += `
+                    <div class="warning-details">
+                        Majority class:
+                        <strong>
+                            ${Number(
+                                warning.majority_percentage
+                            ).toFixed(2)}%
+                        </strong>
+
+                        &nbsp;|&nbsp;
+
+                        Minority class:
+                        <strong>
+                            ${Number(
+                                warning.minority_percentage
+                            ).toFixed(2)}%
+                        </strong>
+
+                    </div>
+                `;
+            }
+
+            reportHTML += `
+                </div>
+            `;
+        });
 
         reportHTML += `
             </div>
         `;
     }
 
-    // -----------------------------------------
-    // Ignored columns
-    // -----------------------------------------
-
-    if (Array.isArray(result.ignored_columns) && result.ignored_columns.length > 0) {
+    // IGNORED COLUMNS
+    if (ignoredColumns.length > 0) {
 
         reportHTML += `
             <div class="validation-section">
 
                 <h4>
+                    <i class="fa-solid fa-eye-slash"
+                       aria-hidden="true"></i>
                     Ignored Columns
                 </h4>
 
@@ -2501,15 +2546,14 @@ function displayValidationResult(result) {
                 <div class="ignored-column-list">
         `;
 
-        result.ignored_columns.forEach(
-            column => {
-                reportHTML += `
-                    <span class="ignored-column">
-                        ${escapeHTML(column)}
-                    </span>
-                `;
-            }
-        );
+        ignoredColumns.forEach(column => {
+
+            reportHTML += `
+                <span class="ignored-column">
+                    ${escapeHTML(column)}
+                </span>
+            `;
+        });
 
         reportHTML += `
                 </div>
@@ -2521,18 +2565,11 @@ function displayValidationResult(result) {
         </div>
     `;
 
-    // -----------------------------------------
-    // Display
-    // -----------------------------------------
-
+    // Display result
     datasetValidationResult.innerHTML = reportHTML;
-    showTaskResult(datasetValidationStatus, datasetValidationResult, datasetValidationError);
-
-    // -----------------------------------------
-    // Validation succeeded
-    // -----------------------------------------
-    console.log("Dataset validated successfully. Train button enabled.");
     datasetValidated = true;
+
+    showTaskResult(datasetValidationStatus, datasetValidationResult, datasetValidationError);
     validateConfiguration();
 }
 

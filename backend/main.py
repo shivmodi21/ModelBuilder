@@ -497,7 +497,7 @@ async def train_endpoint(
     #   nature
     #   feature_engineering
     #   options (categorical)
-    features = validation_result["features"]["info"]
+    features = validation_result["features"]
 
     # 6. Train model
     try:
