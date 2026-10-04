@@ -564,6 +564,40 @@ select {
 }
 
 /* =========================================================
+   MODEL HYPERPARAMETERS
+   ========================================================= */
+
+.model-hyperparameters {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+}
+
+.model-hyperparameters-header {
+    margin-bottom: 20px;
+}
+
+.model-hyperparameters-header h4 {
+    margin: 0 0 6px;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.model-hyperparameters-header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.875rem;
+}
+
+#model-hyperparameters-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+/* =========================================================
    DATA IMBALANCE
 ========================================================= */
 
@@ -582,6 +616,37 @@ select {
     display: block;
     margin-top: 4px;
     line-height: 1.5;
+}
+
+/* =========================================================
+   MODEL CLASS BALANCING
+   ========================================================= */
+
+   .model-balance-group {
+    margin-bottom: 20px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.model-balance-group .form-help {
+    display: block;
+    margin-top: 8px;
 }
 
 /* =========================================================
@@ -2062,6 +2127,10 @@ select {
     .action-buttons button,
     .prediction-actions button {
         width: 100%;
+    }
+
+    #model-hyperparameters-fields {
+        grid-template-columns: 1fr;
     }
 
     .file-upload-area {

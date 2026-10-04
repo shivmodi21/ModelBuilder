@@ -319,6 +319,24 @@
                             class="field-error">
                         </span>
 
+                        <div
+                            id="model-hyperparameters"
+                            class="model-hyperparameters hidden">
+
+                            <div class="model-hyperparameters-header">
+                                <h4>Model Hyperparameters</h4>
+
+                                <p>
+                                    Configure the parameters used to train the selected model.
+                                </p>
+                            </div>
+
+                            <div id="model-hyperparameters-fields">
+                                <!-- Generated dynamically by script.js -->
+                            </div>
+
+                        </div>
+
                     </div>
 
                 </div>
@@ -341,6 +359,43 @@
                                 dataset.
                             </p>
                         </div>
+                    </div>
+
+                    <div
+                        id="model-balance-group"
+                        class="model-balance-group hidden">
+
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                id="use-model-balance"
+                                name="use-model-balance">
+
+                            <span>
+                                Use model's built-in class balancing
+                            </span>
+                        </label>
+
+                        <small
+                            id="model-balance-info"
+                            class="form-help">
+                        </small>
+
+                        <div
+                            id="model-balance-option-group"
+                            class="form-group hidden">
+
+                            <label for="model-balance-option">
+                                Class Weight
+                            </label>
+
+                            <select
+                                id="model-balance-option"
+                                name="model-balance-option">
+                            </select>
+
+                        </div>
+
                     </div>
 
                     <div class="form-group">

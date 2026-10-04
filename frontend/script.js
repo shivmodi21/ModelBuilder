@@ -90,6 +90,482 @@ const ENCODING_OPTIONS = [
     }
 ];
 
+const MODEL_HYPERPARAMETERS = {
+
+    logistic_regression: {
+        label: "Logistic Regression",
+
+        parameters: [
+            {
+                name: "C",
+                label: "C",
+                type: "number",
+                default: 1.0,
+                min: 0.0001,
+                step: 0.1,
+                description: "Inverse regularization strength."
+            },
+            {
+                name: "penalty",
+                label: "Penalty",
+                type: "select",
+                default: "l2",
+                options: [
+                    { value: "l2", label: "L2" },
+                    { value: "l1", label: "L1" },
+                    { value: "elasticnet", label: "Elastic Net" }
+                ]
+            },
+            {
+                name: "solver",
+                label: "Solver",
+                type: "select",
+                default: "lbfgs",
+                options: [
+                    { value: "lbfgs", label: "LBFGS" },
+                    { value: "liblinear", label: "Liblinear" },
+                    { value: "saga", label: "SAGA" }
+                ]
+            },
+            {
+                name: "max_iter",
+                label: "Maximum Iterations",
+                type: "number",
+                default: 1000,
+                min: 1,
+                step: 1,
+                description: "Maximum number of optimization iterations."
+            }
+        ],
+
+        balance: {
+            type: "class_weight",
+            options: [
+                { value: "balanced", label: "Balanced" }
+            ]
+        }
+    },
+
+
+    decision_tree: {
+        label: "Decision Tree",
+
+        parameters: [
+            {
+                name: "criterion",
+                label: "Criterion",
+                type: "select",
+                default: "gini",
+                options: [
+                    { value: "gini", label: "Gini" },
+                    { value: "entropy", label: "Entropy" },
+                    { value: "log_loss", label: "Log Loss" }
+                ]
+            },
+            {
+                name: "max_depth",
+                label: "Maximum Depth",
+                type: "number",
+                default: 10,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "min_samples_split",
+                label: "Minimum Samples Split",
+                type: "number",
+                default: 2,
+                min: 2,
+                step: 1
+            },
+            {
+                name: "min_samples_leaf",
+                label: "Minimum Samples Leaf",
+                type: "number",
+                default: 1,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "max_features",
+                label: "Maximum Features",
+                type: "select",
+                default: "sqrt",
+                options: [
+                    { value: "sqrt", label: "Square Root" },
+                    { value: "log2", label: "Log2" },
+                    { value: "none", label: "None" }
+                ]
+            }
+        ],
+
+        balance: {
+            type: "class_weight",
+            options: [
+                { value: "balanced", label: "Balanced" },
+                { value: "balanced_subsample", label: "Balanced Subsample" }
+            ]
+        }
+    },
+
+
+    random_forest: {
+        label: "Random Forest",
+
+        parameters: [
+            {
+                name: "n_estimators",
+                label: "Number of Trees",
+                type: "number",
+                default: 200,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "criterion",
+                label: "Criterion",
+                type: "select",
+                default: "gini",
+                options: [
+                    { value: "gini", label: "Gini" },
+                    { value: "entropy", label: "Entropy" },
+                    { value: "log_loss", label: "Log Loss" }
+                ]
+            },
+            {
+                name: "max_depth",
+                label: "Maximum Depth",
+                type: "number",
+                default: 10,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "min_samples_split",
+                label: "Minimum Samples Split",
+                type: "number",
+                default: 2,
+                min: 2,
+                step: 1
+            },
+            {
+                name: "min_samples_leaf",
+                label: "Minimum Samples Leaf",
+                type: "number",
+                default: 1,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "max_features",
+                label: "Maximum Features",
+                type: "select",
+                default: "sqrt",
+                options: [
+                    { value: "sqrt", label: "Square Root" },
+                    { value: "log2", label: "Log2" },
+                    { value: "none", label: "None" }
+                ]
+            },
+            {
+                name: "bootstrap",
+                label: "Bootstrap",
+                type: "select",
+                default: "true",
+                options: [
+                    { value: "true", label: "True" },
+                    { value: "false", label: "False" }
+                ]
+            }
+        ],
+
+        balance: {
+            type: "class_weight",
+            options: [
+                { value: "balanced", label: "Balanced" },
+                { value: "balanced_subsample", label: "Balanced Subsample" }
+            ]
+        }
+    },
+
+
+    gradient_boosting: {
+        label: "Gradient Boosting",
+
+        parameters: [
+            {
+                name: "n_estimators",
+                label: "Number of Estimators",
+                type: "number",
+                default: 100,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "learning_rate",
+                label: "Learning Rate",
+                type: "number",
+                default: 0.1,
+                min: 0.0001,
+                step: 0.01
+            },
+            {
+                name: "max_depth",
+                label: "Maximum Depth",
+                type: "number",
+                default: 3,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "min_samples_split",
+                label: "Minimum Samples Split",
+                type: "number",
+                default: 2,
+                min: 2,
+                step: 1
+            },
+            {
+                name: "min_samples_leaf",
+                label: "Minimum Samples Leaf",
+                type: "number",
+                default: 1,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "subsample",
+                label: "Subsample",
+                type: "number",
+                default: 1.0,
+                min: 0.01,
+                max: 1,
+                step: 0.01
+            },
+            {
+                name: "criterion",
+                label: "Criterion",
+                type: "select",
+                default: "friedman_mse",
+                options: [
+                    { value: "friedman_mse", label: "Friedman MSE" },
+                    { value: "squared_error", label: "Squared Error" }
+                ]
+            }
+        ],
+
+        balance: null
+    },
+
+
+    knn: {
+        label: "K-Nearest Neighbors",
+
+        parameters: [
+            {
+                name: "n_neighbors",
+                label: "Number of Neighbors",
+                type: "number",
+                default: 5,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "weights",
+                label: "Weights",
+                type: "select",
+                default: "uniform",
+                options: [
+                    { value: "uniform", label: "Uniform" },
+                    { value: "distance", label: "Distance" }
+                ]
+            },
+            {
+                name: "algorithm",
+                label: "Algorithm",
+                type: "select",
+                default: "auto",
+                options: [
+                    { value: "auto", label: "Auto" },
+                    { value: "ball_tree", label: "Ball Tree" },
+                    { value: "kd_tree", label: "KD Tree" },
+                    { value: "brute", label: "Brute" }
+                ]
+            },
+            {
+                name: "leaf_size",
+                label: "Leaf Size",
+                type: "number",
+                default: 30,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "p",
+                label: "Minkowski Power",
+                type: "number",
+                default: 2,
+                min: 1,
+                step: 1
+            }
+        ],
+
+        balance: null
+    },
+
+
+    svm: {
+        label: "Support Vector Machine",
+
+        parameters: [
+            {
+                name: "C",
+                label: "C",
+                type: "number",
+                default: 1.0,
+                min: 0.0001,
+                step: 0.1
+            },
+            {
+                name: "kernel",
+                label: "Kernel",
+                type: "select",
+                default: "rbf",
+                options: [
+                    { value: "linear", label: "Linear" },
+                    { value: "poly", label: "Polynomial" },
+                    { value: "rbf", label: "RBF" },
+                    { value: "sigmoid", label: "Sigmoid" }
+                ]
+            },
+            {
+                name: "gamma",
+                label: "Gamma",
+                type: "select",
+                default: "scale",
+                options: [
+                    { value: "scale", label: "Scale" },
+                    { value: "auto", label: "Auto" }
+                ]
+            },
+            {
+                name: "degree",
+                label: "Degree",
+                type: "number",
+                default: 3,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "coef0",
+                label: "Coef 0",
+                type: "number",
+                default: 0.0,
+                step: 0.1
+            }
+        ],
+
+        balance: {
+            type: "class_weight",
+            options: [
+                { value: "balanced", label: "Balanced" }
+            ]
+        }
+    },
+
+
+    xgboost: {
+        label: "XGBoost",
+
+        parameters: [
+            {
+                name: "n_estimators",
+                label: "Number of Estimators",
+                type: "number",
+                default: 200,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "learning_rate",
+                label: "Learning Rate",
+                type: "number",
+                default: 0.1,
+                min: 0.0001,
+                step: 0.01
+            },
+            {
+                name: "max_depth",
+                label: "Maximum Depth",
+                type: "number",
+                default: 6,
+                min: 1,
+                step: 1
+            },
+            {
+                name: "min_child_weight",
+                label: "Minimum Child Weight",
+                type: "number",
+                default: 1,
+                min: 0,
+                step: 1
+            },
+            {
+                name: "subsample",
+                label: "Subsample",
+                type: "number",
+                default: 1.0,
+                min: 0.01,
+                max: 1,
+                step: 0.01
+            },
+            {
+                name: "colsample_bytree",
+                label: "Column Subsample",
+                type: "number",
+                default: 1.0,
+                min: 0.01,
+                max: 1,
+                step: 0.01
+            },
+            {
+                name: "gamma",
+                label: "Gamma",
+                type: "number",
+                default: 0,
+                min: 0,
+                step: 0.1
+            },
+            {
+                name: "reg_alpha",
+                label: "L1 Regularization",
+                type: "number",
+                default: 0,
+                min: 0,
+                step: 0.1
+            },
+            {
+                name: "reg_lambda",
+                label: "L2 Regularization",
+                type: "number",
+                default: 1,
+                min: 0,
+                step: 0.1
+            }
+        ],
+
+        balance: {
+            type: "scale_pos_weight",
+            options: [
+                {
+                    value: "auto",
+                    label: "Automatic"
+                }
+            ]
+        }
+    }
+};
+
 // DOM references
 
 const tabButtons = document.querySelectorAll(".tab-button");
@@ -112,6 +588,15 @@ const predictButton = document.getElementById("predict-button");
 
 const modelNameInput = document.getElementById("model-name");
 const modelChoiceInput = document.getElementById("model-choice");
+
+const modelHyperparameters = document.getElementById("model-hyperparameters");
+const modelHyperparametersFields = document.getElementById("model-hyperparameters-fields");
+
+const modelBalanceGroup = document.getElementById("model-balance-group");
+const useModelBalanceInput = document.getElementById("use-model-balance");
+const modelBalanceInfo = document.getElementById("model-balance-info");
+const modelBalanceOptionGroup = document.getElementById("model-balance-option-group");
+const modelBalanceOptionInput = document.getElementById("model-balance-option");
 
 const imbalanceMethodInput = document.getElementById("imbalance-method");
 const imbalanceParameters = document.getElementById("imbalance-parameters");
@@ -1121,6 +1606,411 @@ function displayPredictionError(result) {
 }
 
 // =========================================================
+// MODEL HYPERPARAMETER MANAGEMENT
+// =========================================================
+
+function createModelParameterInput(parameter) {
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "form-group model-parameter";
+
+    const label = document.createElement("label");
+    label.setAttribute("for", `model-param-${parameter.name}`);
+    label.textContent = parameter.label;
+
+    wrapper.appendChild(label);
+
+    let input;
+
+    if (parameter.type === "select") {
+
+        input = document.createElement("select");
+
+        parameter.options.forEach(optionData => {
+
+            const option = document.createElement("option");
+
+            option.value = optionData.value;
+            option.textContent = optionData.label;
+
+            input.appendChild(option);
+        });
+
+        input.value = parameter.default;
+    }
+
+    else {
+
+        input = document.createElement("input");
+
+        input.type = "number";
+        input.value = parameter.default;
+        input.min = parameter.min ?? "";
+        input.max = parameter.max ?? "";
+        input.step = parameter.step ?? "any";
+    }
+
+    input.id = `model-param-${parameter.name}`;
+    input.dataset.parameter = parameter.name;
+
+    wrapper.appendChild(input);
+
+    if (parameter.description) {
+
+        const help = document.createElement("small");
+
+        help.className = "form-help";
+        help.textContent = parameter.description;
+
+        wrapper.appendChild(help);
+    }
+
+    const error = document.createElement("span");
+
+    error.id = `model-param-${parameter.name}-error`;
+    error.className = "field-error";
+
+    wrapper.appendChild(error);
+
+    input.addEventListener("input", () => {
+
+        updateModelParameters();
+        validateModelParameter(parameter, input);
+    });
+
+    input.addEventListener("change", () => {
+
+        updateModelParameters();
+        validateModelParameter(parameter, input);
+    });
+
+    return wrapper;
+}
+
+
+function renderModelHyperparameters() {
+
+    const modelType = modelChoiceInput.value;
+    const configuration = MODEL_HYPERPARAMETERS[modelType];
+
+    modelHyperparametersFields.innerHTML = "";
+
+    if (!configuration) {
+
+        modelHyperparameters.classList.add("hidden");
+
+        return;
+    }
+
+    configuration.parameters.forEach(parameter => {
+
+        const input = createModelParameterInput(parameter);
+
+        modelHyperparametersFields.appendChild(input);
+    });
+
+    modelHyperparameters.classList.remove("hidden");
+}
+
+
+function updateModelParameters() {
+
+    const modelType = modelChoiceInput.value;
+    const configuration = MODEL_HYPERPARAMETERS[modelType];
+
+    if (!configuration) {
+
+        modelConfig.parameters = {};
+
+        return;
+    }
+
+    const parameters = {};
+
+    configuration.parameters.forEach(parameter => {
+
+        const input = document.getElementById(
+            `model-param-${parameter.name}`
+        );
+
+        if (!input) {
+            return;
+        }
+
+        if (parameter.type === "number") {
+
+            const value = Number(input.value);
+
+            parameters[parameter.name] = Number.isFinite(value)
+                ? value
+                : input.value;
+        }
+
+        else if (parameter.name === "bootstrap") {
+
+            parameters[parameter.name] =
+                input.value === "true";
+        }
+
+        else if (parameter.name === "max_features" &&
+                 input.value === "none") {
+
+            parameters[parameter.name] = null;
+        }
+
+        else {
+
+            parameters[parameter.name] = input.value;
+        }
+    });
+
+    modelConfig.parameters = parameters;
+}
+
+
+function validateModelParameter(parameter, input) {
+
+    const errorElement = document.getElementById(
+        `model-param-${parameter.name}-error`
+    );
+
+    if (!errorElement) {
+        return true;
+    }
+
+    errorElement.textContent = "";
+
+    if (parameter.type !== "number") {
+        return true;
+    }
+
+    const rawValue = input.value.trim();
+
+    if (!rawValue) {
+
+        errorElement.textContent =
+            `${parameter.label} is required.`;
+
+        return false;
+    }
+
+    const value = Number(rawValue);
+
+    if (!Number.isFinite(value)) {
+
+        errorElement.textContent =
+            `${parameter.label} must be a valid number.`;
+
+        return false;
+    }
+
+    if (parameter.min !== undefined && value < parameter.min) {
+
+        errorElement.textContent =
+            `${parameter.label} must be at least ${parameter.min}.`;
+
+        return false;
+    }
+
+    if (parameter.max !== undefined && value > parameter.max) {
+
+        errorElement.textContent =
+            `${parameter.label} must be at most ${parameter.max}.`;
+
+        return false;
+    }
+
+    return true;
+}
+
+
+function validateModelHyperparameters() {
+
+    const modelType = modelChoiceInput.value;
+    const configuration = MODEL_HYPERPARAMETERS[modelType];
+
+    if (!configuration) {
+        return false;
+    }
+
+    let valid = true;
+
+    configuration.parameters.forEach(parameter => {
+
+        const input = document.getElementById(
+            `model-param-${parameter.name}`
+        );
+
+        if (!input) {
+            valid = false;
+            return;
+        }
+
+        if (!validateModelParameter(parameter, input)) {
+            valid = false;
+        }
+    });
+
+    return valid;
+}
+
+
+// =========================================================
+// MODEL CLASS BALANCING
+// =========================================================
+
+function updateModelBalanceUI() {
+
+    const modelType = modelChoiceInput.value;
+    const configuration = MODEL_HYPERPARAMETERS[modelType];
+
+    if (!configuration || !configuration.balance) {
+
+        modelBalanceGroup.classList.add("hidden");
+        modelBalanceOptionGroup.classList.add("hidden");
+
+        useModelBalanceInput.checked = false;
+        modelBalanceOptionInput.innerHTML = "";
+
+        modelConfig.parameters.class_weight = undefined;
+        modelConfig.parameters.scale_pos_weight = undefined;
+
+        return;
+    }
+
+    modelBalanceGroup.classList.remove("hidden");
+
+    const balanceType = configuration.balance.type;
+
+    if (balanceType === "class_weight") {
+
+        modelBalanceInfo.textContent =
+            "Use the model's built-in class weighting to give more importance to minority classes.";
+
+    }
+
+    else if (balanceType === "scale_pos_weight") {
+
+        modelBalanceInfo.textContent =
+            "Use XGBoost's built-in positive-class weighting.";
+
+    }
+
+    modelBalanceOptionInput.innerHTML = "";
+
+    configuration.balance.options.forEach(optionData => {
+
+        const option = document.createElement("option");
+
+        option.value = optionData.value;
+        option.textContent = optionData.label;
+
+        modelBalanceOptionInput.appendChild(option);
+    });
+
+    modelBalanceOptionInput.value =
+        configuration.balance.options[0].value;
+
+    modelBalanceOptionGroup.classList.toggle(
+        "hidden",
+        !useModelBalanceInput.checked
+    );
+
+    updateModelBalanceConfiguration();
+}
+
+
+function updateModelBalanceConfiguration() {
+
+    const modelType = modelChoiceInput.value;
+    const configuration = MODEL_HYPERPARAMETERS[modelType];
+
+    if (!configuration || !configuration.balance) {
+        return;
+    }
+
+    const balanceType = configuration.balance.type;
+
+    if (!useModelBalanceInput.checked) {
+
+        delete modelConfig.parameters.class_weight;
+        delete modelConfig.parameters.scale_pos_weight;
+
+        return;
+    }
+
+    if (balanceType === "class_weight") {
+
+        modelConfig.parameters.class_weight =
+            modelBalanceOptionInput.value;
+
+        delete modelConfig.parameters.scale_pos_weight;
+    }
+
+    else if (balanceType === "scale_pos_weight") {
+
+        if (modelBalanceOptionInput.value === "auto") {
+
+            modelConfig.parameters.scale_pos_weight = "auto";
+
+        } else {
+
+            modelConfig.parameters.scale_pos_weight =
+                Number(modelBalanceOptionInput.value);
+        }
+
+        delete modelConfig.parameters.class_weight;
+    }
+}
+
+
+function updateModelConfiguration() {
+
+    const modelType = modelChoiceInput.value;
+
+    modelConfig = {
+        type: modelType,
+        parameters: {}
+    };
+
+    if (!modelType) {
+
+        modelHyperparameters.classList.add("hidden");
+        modelBalanceGroup.classList.add("hidden");
+
+        return;
+    }
+
+    renderModelHyperparameters();
+    updateModelParameters();
+
+    updateModelBalanceUI();
+}
+
+
+useModelBalanceInput.addEventListener("change", () => {
+
+    modelBalanceOptionGroup.classList.toggle(
+        "hidden",
+        !useModelBalanceInput.checked
+    );
+
+    updateModelBalanceConfiguration();
+
+    resetDatasetValidation();
+    validateConfiguration();
+});
+
+
+modelBalanceOptionInput.addEventListener("change", () => {
+
+    updateModelBalanceConfiguration();
+
+    resetDatasetValidation();
+    validateConfiguration();
+});
+
+// =========================================================
 // MODEL INPUT MANAGEMENT
 // =========================================================
 
@@ -2091,6 +2981,7 @@ function validateConfiguration() {
     const targetValid = validateTargetColumn();
     const positiveClassValid = validatePositiveClass();
     const modelChoiceValid = validateModelChoice();
+    const modelHyperparametersValid = modelChoiceValid && validateModelHyperparameters(); 
     const fileSelected = trainingCSVInput.files.length > 0;
 
 
@@ -2100,6 +2991,7 @@ function validateConfiguration() {
         targetValid &&
         positiveClassValid &&
         modelChoiceValid &&
+        modelHyperparametersValid &&
         fileSelected;
 
     // Training is only allowed after
@@ -3289,17 +4181,16 @@ tabButtons.forEach((button) => {
 
 // Model Name
 modelNameInput.addEventListener("input", () => {
-        resetDatasetValidation();
-        validateConfiguration();
-    }
-);
+    resetDatasetValidation();
+    validateConfiguration();
+});
 
 // Model Choice
 modelChoiceInput.addEventListener("change",() => {
-        resetDatasetValidation();
-        validateConfiguration();
-    }
-);
+    updateModelConfiguration();
+    resetDatasetValidation();
+    validateConfiguration();
+});
 
 // Imbalance Input
 imbalanceMethodInput.addEventListener("change", () => {
@@ -3887,6 +4778,7 @@ predictionForm.addEventListener("submit", async (event) => {
 // =========================================================
 
 updateImbalanceConfiguration();
+updateModelConfiguration();
 renderInputFields();
 validateConfiguration();
 
