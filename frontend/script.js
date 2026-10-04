@@ -595,8 +595,7 @@ const modelHyperparametersFields = document.getElementById("model-hyperparameter
 const modelBalanceGroup = document.getElementById("model-balance-group");
 const useModelBalanceInput = document.getElementById("use-model-balance");
 const modelBalanceInfo = document.getElementById("model-balance-info");
-const modelBalanceOptionGroup = document.getElementById("model-balance-option-group");
-const modelBalanceOptionInput = document.getElementById("model-balance-option");
+const modelBalanceOptionContainer = document.getElementById("model-balance-option-container");
 
 const imbalanceMethodInput = document.getElementById("imbalance-method");
 const imbalanceParameters = document.getElementById("imbalance-parameters");
@@ -1859,62 +1858,214 @@ function validateModelHyperparameters() {
 // MODEL CLASS BALANCING
 // =========================================================
 
+function resetModelBalanceUI() {
+
+    /*
+     * Reset checkbox.
+     */
+    useModelBalanceInput.checked = false;
+
+    /*
+     * Clear model-balance information.
+     */
+    modelBalanceInfo.textContent = "";
+
+    /*
+     * Completely remove anything previously
+     * created inside the option container.
+     */
+    modelBalanceOptionContainer.innerHTML = "";
+
+    modelBalanceOptionContainer.classList.add("hidden");
+
+    /*
+     * Hide the entire model-balance section.
+     */
+    modelBalanceGroup.classList.add("hidden");
+
+    /*
+     * Remove any previous model-balance parameters.
+     */
+    delete modelConfig.parameters.class_weight;
+    delete modelConfig.parameters.scale_pos_weight;
+}
+
+
 function updateModelBalanceUI() {
 
     const modelType = modelChoiceInput.value;
-    const configuration = MODEL_HYPERPARAMETERS[modelType];
 
+    const configuration =
+        MODEL_HYPERPARAMETERS[modelType];
+
+
+    /*
+     * =====================================================
+     * START FROM A COMPLETELY CLEAN STATE
+     * =====================================================
+     */
+
+    resetModelBalanceUI();
+
+
+    /*
+     * Model does not support built-in balancing.
+     */
     if (!configuration || !configuration.balance) {
-
-        modelBalanceGroup.classList.add("hidden");
-        modelBalanceOptionGroup.classList.add("hidden");
-
-        useModelBalanceInput.checked = false;
-        modelBalanceOptionInput.innerHTML = "";
-
-        modelConfig.parameters.class_weight = undefined;
-        modelConfig.parameters.scale_pos_weight = undefined;
-
         return;
     }
 
+
+    const balanceType =
+        configuration.balance.type;
+
+    const balanceOptions =
+        configuration.balance.options || [];
+
+
+    /*
+     * =====================================================
+     * SHOW MODEL BALANCE SECTION
+     * =====================================================
+     */
+
     modelBalanceGroup.classList.remove("hidden");
 
-    const balanceType = configuration.balance.type;
+
+    /*
+     * =====================================================
+     * INFORMATION TEXT
+     * =====================================================
+     */
 
     if (balanceType === "class_weight") {
 
         modelBalanceInfo.textContent =
-            "Use the model's built-in class weighting to give more importance to minority classes.";
-
+            "Automatically assigns higher weights to minority classes so that the model gives them greater importance during training.";
     }
 
     else if (balanceType === "scale_pos_weight") {
 
         modelBalanceInfo.textContent =
-            "Use XGBoost's built-in positive-class weighting.";
-
+            "Automatically calculates XGBoost's scale_pos_weight parameter from the target class distribution, giving greater importance to the underrepresented positive class.";
     }
 
-    modelBalanceOptionInput.innerHTML = "";
 
-    configuration.balance.options.forEach(optionData => {
+    /*
+     * =====================================================
+     * MULTIPLE OPTIONS
+     * =====================================================
+     *
+     * Only models with more than one option get a
+     * dropdown.
+     */
 
-        const option = document.createElement("option");
+    if (balanceOptions.length > 1) {
 
-        option.value = optionData.value;
-        option.textContent = optionData.label;
+        const optionGroup =
+            document.createElement("div");
 
-        modelBalanceOptionInput.appendChild(option);
-    });
+        optionGroup.className = "form-group";
 
-    modelBalanceOptionInput.value =
-        configuration.balance.options[0].value;
+        const label =
+            document.createElement("label");
 
-    modelBalanceOptionGroup.classList.toggle(
-        "hidden",
-        !useModelBalanceInput.checked
-    );
+        label.setAttribute(
+            "for",
+            "model-balance-option"
+        );
+
+        label.textContent = "Class Weight";
+
+        const select =
+            document.createElement("select");
+
+        select.id = "model-balance-option";
+        select.name = "model-balance-option";
+
+
+        /*
+         * Add available balance options.
+         */
+        balanceOptions.forEach(optionData => {
+
+            const option =
+                document.createElement("option");
+
+            option.value =
+                optionData.value;
+
+            option.textContent =
+                optionData.label;
+
+            select.appendChild(option);
+        });
+
+
+        /*
+         * Select the first option by default.
+         */
+        select.value =
+            balanceOptions[0].value;
+
+
+        /*
+         * Add elements to the option group.
+         */
+        optionGroup.appendChild(label);
+        optionGroup.appendChild(select);
+
+
+        /*
+         * Add the option group to the DOM.
+         */
+        modelBalanceOptionContainer.appendChild(
+            optionGroup
+        );
+
+        modelBalanceOptionContainer.classList.remove("hidden");
+
+
+        /*
+         * Store the selected value whenever
+         * the dropdown changes.
+         */
+        select.addEventListener("change", () => {
+
+            updateModelBalanceConfiguration();
+
+            resetDatasetValidation();
+            validateConfiguration();
+        });
+    }
+
+
+    /*
+     * =====================================================
+     * CHECKBOX EVENT
+     * =====================================================
+     *
+     * The checkbox itself is always present when the
+     * model supports built-in balancing.
+     */
+
+    useModelBalanceInput.onchange = () => {
+
+        updateModelBalanceConfiguration();
+
+        resetDatasetValidation();
+        validateConfiguration();
+    };
+
+
+    /*
+     * =====================================================
+     * INITIAL CONFIGURATION
+     * =====================================================
+     *
+     * Checkbox starts unchecked, therefore no balancing
+     * parameter is added yet.
+     */
 
     updateModelBalanceConfiguration();
 }
@@ -1922,14 +2073,40 @@ function updateModelBalanceUI() {
 
 function updateModelBalanceConfiguration() {
 
-    const modelType = modelChoiceInput.value;
-    const configuration = MODEL_HYPERPARAMETERS[modelType];
+    const modelType =
+        modelChoiceInput.value;
 
-    if (!configuration || !configuration.balance) {
+    const configuration =
+        MODEL_HYPERPARAMETERS[modelType];
+
+
+    /*
+     * No model or no built-in balancing.
+     */
+    if (
+        !configuration ||
+        !configuration.balance
+    ) {
+
+        delete modelConfig.parameters.class_weight;
+        delete modelConfig.parameters.scale_pos_weight;
+
         return;
     }
 
-    const balanceType = configuration.balance.type;
+
+    const balanceType =
+        configuration.balance.type;
+
+    const balanceOptions =
+        configuration.balance.options || [];
+
+
+    /*
+     * =====================================================
+     * BALANCING DISABLED
+     * =====================================================
+     */
 
     if (!useModelBalanceInput.checked) {
 
@@ -1939,25 +2116,69 @@ function updateModelBalanceConfiguration() {
         return;
     }
 
+
+    /*
+     * =====================================================
+     * CLASS WEIGHT
+     * =====================================================
+     */
+
     if (balanceType === "class_weight") {
 
-        modelConfig.parameters.class_weight =
-            modelBalanceOptionInput.value;
+        /*
+         * Only one option:
+         *
+         * Use it directly. There is no dropdown.
+         */
+        if (balanceOptions.length === 1) {
+
+            modelConfig.parameters.class_weight =
+                balanceOptions[0].value;
+        }
+
+
+        /*
+         * Multiple options:
+         *
+         * Read the dynamically-created dropdown.
+         */
+        else {
+
+            const select =
+                document.getElementById(
+                    "model-balance-option"
+                );
+
+            if (!select) {
+                return;
+            }
+
+            modelConfig.parameters.class_weight =
+                select.value;
+        }
+
 
         delete modelConfig.parameters.scale_pos_weight;
     }
 
-    else if (balanceType === "scale_pos_weight") {
 
-        if (modelBalanceOptionInput.value === "auto") {
+    /*
+     * =====================================================
+     * XGBOOST
+     * =====================================================
+     */
 
-            modelConfig.parameters.scale_pos_weight = "auto";
+    else if (
+        balanceType === "scale_pos_weight"
+    ) {
 
-        } else {
-
-            modelConfig.parameters.scale_pos_weight =
-                Number(modelBalanceOptionInput.value);
-        }
+        /*
+         * "auto" tells the backend to calculate
+         * the appropriate value from the target
+         * class distribution.
+         */
+        modelConfig.parameters.scale_pos_weight =
+            "auto";
 
         delete modelConfig.parameters.class_weight;
     }
@@ -1966,49 +2187,63 @@ function updateModelBalanceConfiguration() {
 
 function updateModelConfiguration() {
 
-    const modelType = modelChoiceInput.value;
+    const modelType =
+        modelChoiceInput.value;
+
+
+    /*
+     * =====================================================
+     * RESET MODEL CONFIGURATION
+     * =====================================================
+     */
 
     modelConfig = {
         type: modelType,
         parameters: {}
     };
 
+
+    /*
+     * =====================================================
+     * NO MODEL SELECTED
+     * =====================================================
+     */
+
     if (!modelType) {
 
+        modelHyperparametersFields.innerHTML = "";
+
         modelHyperparameters.classList.add("hidden");
-        modelBalanceGroup.classList.add("hidden");
+
+        resetModelBalanceUI();
 
         return;
     }
 
+
+    /*
+     * =====================================================
+     * RENDER MODEL HYPERPARAMETERS
+     * =====================================================
+     */
+
     renderModelHyperparameters();
+
+
+    /*
+     * Read the newly-created hyperparameter inputs.
+     */
     updateModelParameters();
+
+
+    /*
+     * =====================================================
+     * RENDER MODEL BALANCING
+     * =====================================================
+     */
 
     updateModelBalanceUI();
 }
-
-
-useModelBalanceInput.addEventListener("change", () => {
-
-    modelBalanceOptionGroup.classList.toggle(
-        "hidden",
-        !useModelBalanceInput.checked
-    );
-
-    updateModelBalanceConfiguration();
-
-    resetDatasetValidation();
-    validateConfiguration();
-});
-
-
-modelBalanceOptionInput.addEventListener("change", () => {
-
-    updateModelBalanceConfiguration();
-
-    resetDatasetValidation();
-    validateConfiguration();
-});
 
 // =========================================================
 // MODEL INPUT MANAGEMENT
