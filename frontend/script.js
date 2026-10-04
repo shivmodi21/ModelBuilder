@@ -1528,7 +1528,7 @@ function renderInputFields() {
                 uniqueValuesMessage.className = "input-field-unique-values";
                 uniqueValuesMessage.innerHTML = `
                     <span class="input-field-unique-label">
-                        Unique values:
+                        Unique Values:
                     </span>
 
                     <span class="input-field-unique-list">
@@ -1580,7 +1580,8 @@ function displayAnalysisResult(result) {
     // Display analysis summary
     datasetAnalysisResult.innerHTML = `
         <div class="dataset-analysis-title">
-            ✓ Dataset Analysis Complete
+            <i class="fa-solid fa-check"></i>
+            Dataset Analysis Complete
         </div>
 
         <div class="dataset-analysis-grid">
@@ -2124,9 +2125,13 @@ function displayValidationError(result) {
 function displayValidationResult(result) {
     console.log("Dataset validation response:", result);
 
-    // Validate response
+    // =========================================================
+    // RESPONSE GUARD
+    // =========================================================
+
     if (!result) {
         console.error("Dataset validation response is empty");
+
         displayValidationError({
             detail: {
                 success: false,
@@ -2138,42 +2143,140 @@ function displayValidationResult(result) {
                 }
             }
         });
+
         return;
     }
 
-    // ---------------------------------------------------------
-    // Extract validation data
-    // ---------------------------------------------------------
+    // =========================================================
+    // EXTRACT VALIDATION DATA
+    // =========================================================
+
     const rows = Number(result.rows ?? 0);
     const columns = Number(result.columns ?? 0);
-    const features = Array.isArray(result.features) ? result.features : [];
+
+    const features = Array.isArray(result.features)
+        ? result.features
+        : [];
+
     const target = result.target ?? {};
-    const ignoredColumns = Array.isArray(result.ignored_columns) ? result.ignored_columns : [];
-    const missingValueValidation = Array.isArray(result.missing_value_validation) ? result.missing_value_validation : [];
-    const categoricalValidation = Array.isArray(result.categorical_validation) ? result.categorical_validation : [];
-    const classImbalanceValidation = Array.isArray(result.class_imbalance_validation) ? result.class_imbalance_validation : [];
-    const validationWarnings = Array.isArray(result.validation_warnings) ? result.validation_warnings : [];
 
-    // ---------------------------------------------------------
-    // Update target state
-    // ---------------------------------------------------------
+    const ignoredColumns = Array.isArray(result.ignored_columns)
+        ? result.ignored_columns
+        : [];
 
-    if (target.positive_class !== undefined && target.positive_class !== null) {
-        targetConfig.positive_class = String(target.positive_class);
-    }
+    const missingValueValidation =
+        Array.isArray(result.missing_value_validation)
+            ? result.missing_value_validation
+            : [];
 
-    if (target.negative_class !== undefined && target.negative_class !== null) {
-        negativeClassDisplay.textContent = String(target.negative_class);
-        negativeClassContainer.classList.remove("hidden");
-    }
+    const categoricalValidation =
+        result.categorical_validation ?? {};
 
-    // Build report
+    const categoricalFeatures =
+        Array.isArray(categoricalValidation.categorical_features)
+            ? categoricalValidation.categorical_features
+            : [];
+
+    const classImbalanceValidation =
+        result.class_imbalance_validation ?? {};
+
+    const validationWarnings =
+        Array.isArray(result.validation_warnings)
+            ? result.validation_warnings
+            : [];
+
+    // =========================================================
+    // IDENTIFY WARNING TYPES
+    // =========================================================
+
+    const lowCategoryWarnings =
+        validationWarnings.filter(
+            warning =>
+                warning?.warning_type ===
+                "low_category_repetition"
+        );
+
+    const oneHotWarning =
+        validationWarnings.find(
+            warning =>
+                warning?.warning_type ===
+                "one_hot_expansion"
+        );
+
+    const imbalanceWarning =
+        validationWarnings.find(
+            warning =>
+                warning?.warning_type ===
+                "data_imbalance"
+        );
+
+    // =========================================================
+    // TARGET CLASS INFORMATION
+    // =========================================================
+
+    let positiveClassInfo = null;
+    let negativeClassInfo = null;
+
+    Object.entries(classImbalanceValidation).forEach(
+        ([className, classInfo]) => {
+
+            if (classInfo?.is_positive) {
+                positiveClassInfo = {
+                    name: className,
+                    ...classInfo
+                };
+            } else {
+                negativeClassInfo = {
+                    name: className,
+                    ...classInfo
+                };
+            }
+        }
+    );
+
+    // The backend decides when the dataset is considered
+    // imbalanced. We only use the presence of its warning.
+    const isImbalanced = Boolean(imbalanceWarning);
+
+    // =========================================================
+    // FEATURE EXPANSION
+    // =========================================================
+
+    const originalFeatureCount =
+        Number(
+            categoricalValidation.original_feature_count ?? 0
+        );
+
+    const finalFeatureCount =
+        Number(
+            categoricalValidation.final_feature_count ?? 0
+        );
+
+    const featureCountAdded =
+        Number(
+            categoricalValidation.feature_count_added ?? 0
+        );
+
+    const increasePercentage =
+        Number(
+            categoricalValidation.increase_percentage ?? 0
+        );
+
+    // =========================================================
+    // BUILD REPORT
+    // =========================================================
+
     let reportHTML = `
         <div class="validation-report">
+
+            <!-- =================================================
+                 VALIDATION SUMMARY
+            ================================================== -->
+
             <div class="validation-summary">
+
                 <div class="validation-summary-title">
-                    <i class="fa-solid fa-circle-check"
-                       aria-hidden="true"></i>
+                    <i class="fa-solid fa-check"></i>
                     Dataset Valid
                 </div>
 
@@ -2182,78 +2285,212 @@ function displayValidationResult(result) {
                     <div>
                         <span>Rows</span>
                         <strong>
-                            ${rows.toLocaleString()}
+                            ${rows}
                         </strong>
                     </div>
 
                     <div>
                         <span>CSV Columns</span>
                         <strong>
-                            ${columns.toLocaleString()}
+                            ${columns}
                         </strong>
                     </div>
 
                     <div>
                         <span>Features</span>
                         <strong>
-                            ${features.length.toLocaleString()}
+                            ${features.length}
                         </strong>
                     </div>
 
                     <div>
                         <span>Target</span>
                         <strong>
-                            ${escapeHTML(target.name ?? "-")}
+                            ${escapeHTML(
+                                String(
+                                    target.name ?? "—"
+                                )
+                            )}
                         </strong>
                     </div>
 
                 </div>
+
             </div>
     `;
 
-    // TARGET INFORMATION
+    // =========================================================
+    // TARGET
+    // =========================================================
+
     reportHTML += `
         <div class="validation-section">
 
-            <h4>
-                <i class="fa-solid fa-bullseye"
-                   aria-hidden="true"></i>
-                Target
-            </h4>
+            <h4>Target</h4>
 
             <div class="validation-target">
+
+                <!-- Target name -->
                 <div>
-                    <strong>Name:</strong>
-                    ${escapeHTML(target.name ?? "-")}
+                    <strong>Name</strong>
+
+                    <span>
+                        ${escapeHTML(
+                            String(
+                                target.name ?? "—"
+                            )
+                        )}
+                    </span>
                 </div>
 
+                <!-- Positive class -->
                 <div>
-                    <strong>Classes:</strong>
-                    ${Array.isArray(target.classes) ? escapeHTML(target.classes.join(", ")) : "-"}
+                    <strong>Positive Class</strong>
+
+                    <span class="validation-target-class-row">
+
+                        <span>
+                            ${escapeHTML(
+                                String(
+                                    target.positive_class ?? "—"
+                                )
+                            )}
+                        </span>
+
+                        <strong class="validation-target-percentage">
+                            ${
+                                positiveClassInfo
+                                    ? `${positiveClassInfo.percentage}%`
+                                    : "—"
+                            }
+                        </strong>
+
+                    </span>
                 </div>
 
+                <!-- Negative class -->
                 <div>
-                    <strong>Positive class:</strong>
-                    ${escapeHTML(target.positive_class ?? "-")}
+                    <strong>Negative Class</strong>
+
+                    <span class="validation-target-class-row">
+
+                        <span>
+                            ${escapeHTML(
+                                String(
+                                    target.negative_class ?? "—"
+                                )
+                            )}
+                        </span>
+
+                        <strong class="validation-target-percentage">
+                            ${
+                                negativeClassInfo
+                                    ? `${negativeClassInfo.percentage}%`
+                                    : "—"
+                            }
+                        </strong>
+
+                    </span>
                 </div>
 
-                <div>
-                    <strong>Negative class:</strong>
-                    ${escapeHTML(target.negative_class ?? "-")}
+                <!-- Distribution status -->
+                <div class="${
+                    isImbalanced
+                        ? "validation-target-warning"
+                        : ""
+                }">
+
+                    <strong>Distribution</strong>
+
+                    <span class="validation-target-status ${
+                        isImbalanced
+                            ? "validation-warning-value"
+                            : ""
+                    }">
+
+                        ${
+                            isImbalanced
+                                ? "<i class='fa-solid fa-triangle-exclamation' aria-hidden='true'></i> Imbalanced"
+                                : "<i class='fa-solid fa-check' aria-hidden='true'></i> Balanced"
+                        }
+
+                    </span>
+
                 </div>
+
             </div>
+
         </div>
     `;
 
+    // =========================================================
+    // FEATURE EXPANSION
+    // =========================================================
+
+    reportHTML += `
+        <div class="validation-section">
+
+            <h4>Feature Expansion</h4>
+
+            <div class="validation-expansion">
+
+                <div>
+                    <span>Original Features</span>
+
+                    <strong>
+                        ${originalFeatureCount}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Final Features</span>
+
+                    <strong>
+                        ${finalFeatureCount}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Columns Added</span>
+
+                    <strong>
+                        ${
+                            featureCountAdded > 0
+                                ? `+${featureCountAdded}`
+                                : featureCountAdded
+                        }
+                    </strong>
+                </div>
+
+                <div class="${
+                    increasePercentage > 100
+                        ? "validation-warning-value"
+                        : ""
+                }">
+
+                    <span>Increase</span>
+
+                    <strong>
+                        ${increasePercentage}%
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+    // =========================================================
     // MISSING VALUE VALIDATION
+    // =========================================================
+
     if (missingValueValidation.length > 0) {
 
         reportHTML += `
             <div class="validation-section">
 
                 <h4>
-                    <i class="fa-solid fa-filter-circle-check"
-                       aria-hidden="true"></i>
                     Missing Value Validation
                 </h4>
 
@@ -2266,68 +2503,104 @@ function displayValidationResult(result) {
                                 <th>Feature</th>
                                 <th>Missing Values</th>
                                 <th>Strategy</th>
-                                <th>Result</th>
+                                <th>Replacement Value</th>
+                                <th>Remaining</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
+
                         <tbody>
         `;
 
-        missingValueValidation.forEach(field => {
-            const missingCount = Number(field.missing_count ?? 0);
-            const remainingMissing = Number(field.remaining_missing ?? 0);
-            const applied = Boolean(field.applied);
+        missingValueValidation.forEach(validation => {
 
-            let resultHTML;
-
-            if (remainingMissing === 0) {
-                resultHTML = `
-                    <span class="validation-pass">
-                        ✓
-                    </span>
-                `;
-            } else {
-                resultHTML = `
-                    <span class="validation-fail">
-                        ✕
-                    </span>
-                `;
-            }
+            const missingCount =Number(validation.missing_count ?? 0);
+            const remainingMissing =Number(validation.remaining_missing ?? 0);
+            const passed = remainingMissing === 0;
 
             reportHTML += `
                 <tr>
+
                     <td class="validation-field-name">
-                        ${escapeHTML(field.field ?? "-")}
+                        ${escapeHTML(
+                            String(
+                                validation.field ?? "—"
+                            )
+                        )}
                     </td>
+
                     <td>
-                        ${missingCount.toLocaleString()}
+                        ${missingCount}
                     </td>
+
                     <td>
-                        ${escapeHTML(field.strategy ?? "-")}
+                        ${escapeHTML(
+                            validation.strategy
+                                ? getOptionLabel(
+                                    inputFields.find(
+                                        field =>
+                                            field.name === validation.field
+                                    )?.nature === "Numerical"
+                                        ? NUMERICAL_MISSING_OPTIONS
+                                        : CATEGORICAL_MISSING_OPTIONS,
+                                    validation.strategy
+                                )
+                                : "—"
+                        )}
                     </td>
+
+                    <td>
+                        ${escapeHTML(String(validation.replacement_value ?? "—"))}
+                    </td>
+
+                    <td>
+                        ${remainingMissing}
+                    </td>
+
                     <td class="validation-status-cell">
-                        ${resultHTML}
+
+                        <span class="${
+                            passed
+                                ? "validation-pass"
+                                : "validation-warning-value"
+                        }">
+
+                            ${
+                                passed
+                                    ? "<i class='fa-solid fa-check' aria-hidden='true'></i>"
+                                    : "<i class='fa-solid fa-triangle-exclamation' aria-hidden='true'></i>"
+                            }
+
+                        </span>
+
                     </td>
+
                 </tr>
             `;
+
         });
 
         reportHTML += `
                         </tbody>
+
                     </table>
+
                 </div>
+
             </div>
         `;
     }
 
+    // =========================================================
     // CATEGORICAL VALIDATION
-    if (categoricalValidation.length > 0) {
+    // =========================================================
+
+    if (categoricalFeatures.length > 0) {
 
         reportHTML += `
             <div class="validation-section">
 
                 <h4>
-                    <i class="fa-solid fa-tags"
-                       aria-hidden="true"></i>
                     Categorical Validation
                 </h4>
 
@@ -2343,26 +2616,25 @@ function displayValidationResult(result) {
                                 <th>Unique %</th>
                             </tr>
                         </thead>
+
                         <tbody>
         `;
 
-        categoricalValidation.forEach(field => {
-            const uniqueCount = Number(field.unique_count ?? 0);
-            const uniquePercentage = Number(field.unique_percentage ?? 0);
+        categoricalFeatures.forEach(feature => {
 
             reportHTML += `
                 <tr>
                     <td class="validation-field-name">
-                        ${escapeHTML(field.field ?? "-")}
+                        ${escapeHTML(String(feature.field ?? "—"))}
                     </td>
                     <td>
-                        ${escapeHTML(field.encoding_type ?? "-")}
+                        ${escapeHTML(feature.encoding_type ? getOptionLabel(ENCODING_OPTIONS, feature.encoding_type) : "—")}
                     </td>
                     <td>
-                        ${uniqueCount.toLocaleString()}
+                        ${Number(feature.unique_count ?? 0)}
                     </td>
                     <td>
-                        ${uniquePercentage.toFixed(2)}%
+                        ${Number(feature.unique_percentage ?? 0)}%
                     </td>
                 </tr>
             `;
@@ -2376,85 +2648,24 @@ function displayValidationResult(result) {
         `;
     }
 
-    // CLASS IMBALANCE
-    if (classImbalanceValidation.length > 0) {
-
-        reportHTML += `
-            <div class="validation-section">
-
-                <h4>
-                    <i class="fa-solid fa-scale-balanced"
-                       aria-hidden="true"></i>
-                    Class Distribution
-                </h4>
-
-                <div class="validation-table-wrapper">
-
-                    <table class="validation-table">
-
-                        <thead>
-                            <tr>
-                                <th>Class</th>
-                                <th>Count</th>
-                                <th>Percentage</th>
-                                <th>Positive</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-        `;
-
-        classImbalanceValidation.forEach(classInfo => {
-            const count = Number(classInfo.count ?? 0);
-            const percentage = Number(classInfo.percentage ?? 0);
-            const isPositive = Boolean(classInfo.is_positive);
-
-            reportHTML += `
-                <tr>
-                    <td class="validation-field-name">
-                        ${escapeHTML(classInfo.class ?? "-")}
-                    </td>
-                    <td>
-                        ${count.toLocaleString()}
-                    </td>
-                    <td>
-                        ${percentage.toFixed(2)}%
-                    </td>
-                    <td class="validation-status-cell">
-                        ${
-                            isPositive
-                                ? `
-                                    <span class="validation-pass">
-                                        ✓
-                                    </span>
-                                  `
-                                : `
-                                    <span class="validation-muted">
-                                        —
-                                    </span>
-                                  `
-                        }
-
-                    </td>
-                </tr>
-            `;
-        });
-
-        reportHTML += `
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-
+    // =========================================================
     // WARNINGS
+    //
+    // ALL backend warnings remain here.
+    //
+    // 1. Low category repetition
+    // 2. One-hot expansion
+    // 3. Data imbalance
+    //
+    // Data imbalance is NOT duplicated in Target.
+    // Target only summarizes the class distribution.
+    // =========================================================
+
     if (validationWarnings.length > 0) {
+
         reportHTML += `
             <div class="validation-section">
                 <h4>
-                    <i class="fa-solid fa-triangle-exclamation"
-                       aria-hidden="true"></i>
                     Warnings
                     <span class="warning-count">
                         ${validationWarnings.length}
@@ -2463,60 +2674,315 @@ function displayValidationResult(result) {
         `;
 
         validationWarnings.forEach(warning => {
-            const warningField = warning.field || warning.name || "Dataset";
-            const warningMessage = warning.message || warning.warning_message || "Review this validation warning.";
+
+            // =================================================
+            // LOW CATEGORY REPETITION
+            // =================================================
+
+            if (warning.warning_type === "low_category_repetition") {
+                const fieldName = warning.field || "Categorical Feature";
+                reportHTML += `
+                    <div class="validation-warning">
+
+                        <div class="validation-warning-title">
+                            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                            <span>
+                                Low Category Repetition
+                            </span>
+
+                            <span class="validation-warning-field">
+                                ${escapeHTML(String(fieldName))}
+                            </span>
+
+                        </div>
+
+                        <p>
+                            ${escapeHTML(String(warning.warning_message ?? "This categorical feature has very little category repetition."))}
+                        </p>
+
+                        <div class="warning-details">
+                            <span>
+                                <strong>
+                                    ${Number(
+                                        warning.unique_count ?? 0
+                                    )}
+                                </strong>
+                                different categories
+                            </span>
+
+                            <span>
+                                across
+                                <strong>
+                                    ${Number(
+                                        warning.non_missing_count ?? 0
+                                    )}
+                                </strong>
+                                non-missing rows
+                            </span>
+
+                            <span>
+                                —
+                                <strong>
+                                    ${Number(
+                                        warning.unique_percentage ?? 0
+                                    )}%
+                                </strong>
+                                unique
+                            </span>
+
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // =================================================
+            // ONE-HOT EXPANSION
+            // =================================================
+
+            if (warning.warning_type ==="one_hot_expansion") {
+
+                reportHTML += `
+                    <div class="validation-warning">
+
+                        <div class="validation-warning-title">
+                            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                            <span>
+                                High One-Hot Expansion
+                            </span>
+
+                        </div>
+
+                        <p>
+                            ${escapeHTML(String(warning.warning_message ?? "One-hot encoding will increase the feature count."))}
+                        </p>
+                `;
+
+                if (
+                    Array.isArray(
+                        warning.one_hot_features
+                    ) &&
+                    warning.one_hot_features.length > 0
+                ) {
+
+                    reportHTML += `
+                        <div class="validation-warning-subtitle">
+                            Affected Features
+                        </div>
+
+                        <div class="validation-table-wrapper">
+
+                            <table class="validation-table">
+
+                                <thead>
+                                    <tr>
+                                        <th>Feature</th>
+                                        <th>Unique Values</th>
+                                        <th>Example Classes</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                    `;
+
+                    warning.one_hot_features.forEach(
+                        feature => {
+
+                            const classes =
+                                Array.isArray(
+                                    feature.classes
+                                )
+                                    ? feature.classes
+                                    : [];
+
+                            const uniqueCount =
+                                Number(
+                                    feature.unique_count ??
+                                    classes.length
+                                );
+
+                            const displayedClasses =
+                                classes
+                                    .slice(0, 5)
+                                    .map(value =>
+                                        escapeHTML(
+                                            String(value)
+                                        )
+                                    )
+                                    .join(", ");
+
+                            const classesSuffix =
+                                uniqueCount > 5
+                                    ? ", ..."
+                                    : "";
+
+                            reportHTML += `
+                                <tr>
+
+                                    <td class="validation-field-name">
+                                        ${escapeHTML(
+                                            String(
+                                                feature.field ??
+                                                "—"
+                                            )
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        ${uniqueCount}
+                                    </td>
+
+                                    <td>
+                                        ${
+                                            displayedClasses ||
+                                            "—"
+                                        }${classesSuffix}
+                                    </td>
+
+                                </tr>
+                            `;
+                        }
+                    );
+
+                    reportHTML += `
+                                </tbody>
+
+                            </table>
+
+                        </div>
+                    `;
+                }
+
+                reportHTML += `
+                    </div>
+                `;
+
+                return;
+            }
+
+            // =================================================
+            // DATA IMBALANCE
+            // =================================================
+
+            if (
+                warning.warning_type ===
+                "data_imbalance"
+            ) {
+
+                reportHTML += `
+                    <div class="validation-warning">
+
+                        <div class="validation-warning-title">
+                            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                            <span>
+                                Data Imbalance
+                            </span>
+
+                        </div>
+
+                        <p>
+                            ${escapeHTML(
+                                String(
+                                    warning.warning_message ??
+                                    "The target dataset is imbalanced."
+                                )
+                            )}
+                        </p>
+
+                        <div class="warning-details">
+
+                            <span>
+                                Majority:
+                                <strong>
+                                    ${Number(
+                                        warning.majority_percentage ?? 0
+                                    )}%
+                                </strong>
+                            </span>
+
+                            <span>•</span>
+
+                            <span>
+                                Minority:
+                                <strong>
+                                    ${Number(
+                                        warning.minority_percentage ?? 0
+                                    )}%
+                                </strong>
+                            </span>
+
+                            <span>•</span>
+
+                            <span>
+                                Ratio:
+                                <strong>
+                                    ${Number(
+                                        warning.imbalance_ratio ?? 0
+                                    )}
+                                </strong>
+                            </span>
+
+                        </div>
+
+                    </div>
+                `;
+
+                return;
+            }
+
+            // =================================================
+            // FALLBACK WARNING
+            //
+            // Keep this so a future backend warning does not
+            // silently disappear from the report.
+            // =================================================
+
+            const warningTitle =
+                warning.warning_type
+                    ? String(warning.warning_type)
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, char =>
+                            char.toUpperCase()
+                        )
+                    : "Dataset Warning";
 
             reportHTML += `
                 <div class="validation-warning">
+
                     <div class="validation-warning-title">
-                        <i class="fa-solid fa-triangle-exclamation"
-                           aria-hidden="true"></i>
-                        ${escapeHTML(warningField)}
+                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                        <span>
+                            ${escapeHTML(
+                                warningTitle
+                            )}
+                        </span>
+
+                        ${
+                            warning.field
+                                ? `
+                                    <span class="validation-warning-field">
+                                        ${escapeHTML(
+                                            String(
+                                                warning.field
+                                            )
+                                        )}
+                                    </span>
+                                `
+                                : ""
+                        }
+
                     </div>
+
                     <p>
-                        ${escapeHTML(warningMessage)}
+                        ${escapeHTML(
+                            String(
+                                warning.warning_message ??
+                                warning.message ??
+                                "Review this validation warning."
+                            )
+                        )}
                     </p>
-            `;
 
-            if (warning.unique_count !== undefined) {
-                reportHTML += `
-                    <div class="warning-details">
-                        Unique values:
-                        <strong>
-                            ${Number(warning.unique_count).toLocaleString()}
-                        </strong>
-                        /
-                        ${Number(warning.non_missing_count ?? 0).toLocaleString()}
-                        non-missing rows
-                        (${Number(warning.unique_percentage ?? 0).toFixed(2)}%)
-                    </div>
-                `;
-            }
-
-            if (warning.majority_percentage !== undefined) {
-                reportHTML += `
-                    <div class="warning-details">
-                        Majority class:
-                        <strong>
-                            ${Number(
-                                warning.majority_percentage
-                            ).toFixed(2)}%
-                        </strong>
-
-                        &nbsp;|&nbsp;
-
-                        Minority class:
-                        <strong>
-                            ${Number(
-                                warning.minority_percentage
-                            ).toFixed(2)}%
-                        </strong>
-
-                    </div>
-                `;
-            }
-
-            reportHTML += `
                 </div>
             `;
         });
@@ -2526,15 +2992,16 @@ function displayValidationResult(result) {
         `;
     }
 
+    // =========================================================
     // IGNORED COLUMNS
+    // =========================================================
+
     if (ignoredColumns.length > 0) {
 
         reportHTML += `
             <div class="validation-section">
 
                 <h4>
-                    <i class="fa-solid fa-eye-slash"
-                       aria-hidden="true"></i>
                     Ignored Columns
                 </h4>
 
@@ -2550,26 +3017,45 @@ function displayValidationResult(result) {
 
             reportHTML += `
                 <span class="ignored-column">
-                    ${escapeHTML(column)}
+                    ${escapeHTML(
+                        String(column)
+                    )}
                 </span>
             `;
+
         });
 
         reportHTML += `
                 </div>
+
             </div>
         `;
     }
+
+    // =========================================================
+    // CLOSE REPORT
+    // =========================================================
 
     reportHTML += `
         </div>
     `;
 
-    // Display result
-    datasetValidationResult.innerHTML = reportHTML;
+    // =========================================================
+    // DISPLAY
+    // =========================================================
+
+    datasetValidationResult.innerHTML =
+        reportHTML;
+
+    // Validation succeeded.
     datasetValidated = true;
 
-    showTaskResult(datasetValidationStatus, datasetValidationResult, datasetValidationError);
+    showTaskResult(
+        datasetValidationStatus,
+        datasetValidationResult,
+        datasetValidationError
+    );
+
     validateConfiguration();
 }
 
@@ -2723,6 +3209,15 @@ function formatFileSize(bytes) {
     const index = Math.floor(Math.log(bytes) / Math.log(1024));
 
     return ((bytes / Math.pow(1024, index)).toFixed(2) + " " + units[index]);
+}
+
+function getOptionLabel(options, value) {
+
+    const option = options.find(
+        item => item.value === value
+    );
+
+    return option ? option.label : value;
 }
 
 function formatMetric(value) {
@@ -3138,7 +3633,10 @@ saveModelButton.addEventListener("click", async () => {
             }
 
             // Success
-            saveModelResult.textContent = "✓ Model has been saved and is now available in the Models tab";
+            saveModelResult.innerHTML = `
+                <i class="fa-solid fa-check"></i>
+                Model has been saved and is now available in the Models tab
+            `;
             showTaskResult(saveModelStatus, saveModelResult, saveModelError);
 
             // Model is no longer temporary

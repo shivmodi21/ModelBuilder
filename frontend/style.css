@@ -924,8 +924,10 @@ select {
 .dataset-analysis-table th {
     background: var(--card);
     color: var(--text-muted);
-    font-size: 0.72rem;
-    font-weight: 600;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
     white-space: nowrap;
 }
 
@@ -1041,9 +1043,13 @@ select {
 }
 
 .validation-section h4 {
-    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 13px;
     color: var(--text);
     font-size: 0.88rem;
+    font-weight: 650;
 }
 
 .validation-target {
@@ -1076,6 +1082,41 @@ select {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+}
+
+.validation-target-class-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.validation-target-percentage {
+    color: var(--text-secondary) !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    white-space: nowrap;
+}
+
+.validation-target-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--success) !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.validation-target-warning {
+    border-color: rgba(210, 153, 34, 0.45) !important;
+}
+
+.validation-target-warning .validation-target-status {
+    color: var(--warning) !important;
 }
 
 .validation-muted {
@@ -1147,14 +1188,21 @@ select {
 .validation-table th {
     background: var(--card-hover);
     color: var(--text-secondary);
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
     white-space: nowrap;
 }
 
 .validation-table td {
     color: var(--text);
     font-size: 0.78rem;
+}
+
+.validation-table td:last-child {
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .validation-table tbody tr:last-child td {
@@ -1208,7 +1256,6 @@ select {
     font-size: 0.82rem;
     font-weight: 800;
 }
-
 /* =========================================================
    15. VALIDATION EXPANSION / WARNINGS
 ========================================================= */
@@ -1223,17 +1270,22 @@ select {
 .validation-expansion > div {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    justify-content: space-between;
+    gap: 6px;
     min-width: 0;
-    padding: 10px;
+    min-height: 78px;
+    padding: 12px;
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 7px;
 }
 
 .validation-expansion span {
     color: var(--text-muted);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .validation-expansion strong {
@@ -1241,25 +1293,74 @@ select {
     font-size: 0.95rem;
 }
 
+.validation-expansion .validation-warning-value strong {
+    color: var(--warning) !important;
+}
+
+
+/* -----------------------------------------
+   Validation warnings
+----------------------------------------- */
+
 .validation-warning {
     margin-top: 15px;
-    padding: 14px 16px;
+    padding: 15px 16px;
     background: var(--warning-background);
     border: 1px solid rgba(210, 153, 34, 0.35);
     border-radius: 8px;
 }
 
+.validation-warning:first-of-type {
+    margin-top: 0;
+}
+
 .validation-warning-title {
-    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 7px;
     color: var(--warning);
     font-size: 0.82rem;
     font-weight: 600;
 }
 
+.validation-warning-title i {
+    flex-shrink: 0;
+}
+
+.validation-warning-field {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    background: rgba(210, 153, 34, 0.10);
+    border: 1px solid rgba(210, 153, 34, 0.28);
+    border-radius: 5px;
+    color: var(--warning);
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
 .validation-warning p {
+    margin: 0;
     color: var(--text-secondary);
     font-size: 0.78rem;
+    line-height: 1.55;
 }
+
+.validation-warning-subtitle {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+
+/* -----------------------------------------
+   Warning count
+----------------------------------------- */
 
 .warning-count {
     display: inline-flex;
@@ -1276,17 +1377,34 @@ select {
     font-weight: 600;
 }
 
+
+/* -----------------------------------------
+   Warning details
+----------------------------------------- */
+
 .warning-details {
-    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
     color: var(--text-secondary);
-    font-size: 0.78rem;
+    font-size: 0.76rem;
+    line-height: 1.5;
 }
 
-.validation-warning-value {
-    color: var(--warning);
+.warning-details strong {
+    color: var(--text);
     font-weight: 600;
 }
 
+/* Warning values */
+.validation-warning-value {
+    color: var(--warning) !important;
+    font-weight: 600;
+}
+
+/* Ignored columns */
 .ignored-column-list {
     display: flex;
     flex-wrap: wrap;
