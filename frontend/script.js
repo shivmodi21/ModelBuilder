@@ -598,6 +598,7 @@ const modelBalanceInfo = document.getElementById("model-balance-info");
 const modelBalanceOptionContainer = document.getElementById("model-balance-option-container");
 
 const imbalanceMethodInput = document.getElementById("imbalance-method");
+const imbalanceMethodGroup = document.getElementById("imbalance-method-group");
 const imbalanceParameters = document.getElementById("imbalance-parameters");
 const samplingLevelInput = document.getElementById("sampling-level");
 const imbalanceNeighborsGroup = document.getElementById("imbalance-neighbors-group");
@@ -1865,6 +1866,11 @@ function resetModelBalanceUI() {
      */
     useModelBalanceInput.checked = false;
 
+    imbalanceMethodInput.disabled = false;
+    imbalanceMethodInput.value = "none";
+    updateImbalanceConfiguration();
+    imbalanceMethodGroup.classList.remove("hidden");
+
     /*
      * Clear model-balance information.
      */
@@ -1942,6 +1948,7 @@ function updateModelBalanceUI() {
 
         modelBalanceInfo.textContent =
             "Automatically assigns higher weights to minority classes so that the model gives them greater importance during training.";
+
     }
 
     else if (balanceType === "scale_pos_weight") {
@@ -1953,11 +1960,63 @@ function updateModelBalanceUI() {
 
     /*
      * =====================================================
+     * CHECKBOX
+     * =====================================================
+     */
+
+    useModelBalanceInput.onchange = () => {
+
+        updateModelBalanceConfiguration();
+
+        /*
+         * Show the model-specific option dropdown only
+         * when Random Forest is selected AND the checkbox
+         * is checked.
+         */
+        if (
+            modelType === "random_forest" &&
+            useModelBalanceInput.checked &&
+            balanceOptions.length > 1
+        ) {
+            modelBalanceOptionContainer.classList.remove("hidden");
+        }
+
+        else {
+            modelBalanceOptionContainer.classList.add("hidden");
+        }
+
+
+        /*
+         * Built-in model balancing and manual imbalance
+         * handling are mutually exclusive.
+         */
+        const useBuiltInBalance = useModelBalanceInput.checked;
+
+        imbalanceMethodInput.disabled = useBuiltInBalance;
+
+        if (useBuiltInBalance) {
+            imbalanceMethodInput.value = "none";
+            updateImbalanceConfiguration();
+        }
+
+        imbalanceMethodGroup.classList.toggle(
+            "hidden",
+            useBuiltInBalance
+        );
+
+
+        resetDatasetValidation();
+        validateConfiguration();
+    };
+
+
+    /*
+     * =====================================================
      * MULTIPLE OPTIONS
      * =====================================================
      *
-     * Only models with more than one option get a
-     * dropdown.
+     * Create the dropdown only for models that have
+     * multiple class-weight choices.
      */
 
     if (balanceOptions.length > 1) {
@@ -1987,6 +2046,7 @@ function updateModelBalanceUI() {
         /*
          * Add available balance options.
          */
+
         balanceOptions.forEach(optionData => {
 
             const option =
@@ -2005,6 +2065,7 @@ function updateModelBalanceUI() {
         /*
          * Select the first option by default.
          */
+
         select.value =
             balanceOptions[0].value;
 
@@ -2012,6 +2073,7 @@ function updateModelBalanceUI() {
         /*
          * Add elements to the option group.
          */
+
         optionGroup.appendChild(label);
         optionGroup.appendChild(select);
 
@@ -2019,17 +2081,17 @@ function updateModelBalanceUI() {
         /*
          * Add the option group to the DOM.
          */
+
         modelBalanceOptionContainer.appendChild(
             optionGroup
         );
-
-        modelBalanceOptionContainer.classList.remove("hidden");
 
 
         /*
          * Store the selected value whenever
          * the dropdown changes.
          */
+
         select.addEventListener("change", () => {
 
             updateModelBalanceConfiguration();
@@ -2042,29 +2104,47 @@ function updateModelBalanceUI() {
 
     /*
      * =====================================================
-     * CHECKBOX EVENT
+     * INITIAL DROPDOWN STATE
      * =====================================================
      *
-     * The checkbox itself is always present when the
-     * model supports built-in balancing.
+     * The dropdown is visible only when the checkbox
+     * is already checked.
      */
 
-    useModelBalanceInput.onchange = () => {
+    if (
+        modelType === "random_forest" &&
+        useModelBalanceInput.checked &&
+        balanceOptions.length > 1
+    ) {
+        modelBalanceOptionContainer.classList.remove("hidden");
+    }
 
-        updateModelBalanceConfiguration();
+    else {
+        modelBalanceOptionContainer.classList.add("hidden");
+    }
 
-        resetDatasetValidation();
-        validateConfiguration();
-    };
+
+    /*
+     * =====================================================
+     * INITIAL IMBALANCE METHOD STATE
+     * =====================================================
+     */
+
+    imbalanceMethodInput.disabled =
+        useModelBalanceInput.checked;
+
+    if (useModelBalanceInput.checked) {
+
+        imbalanceMethodInput.value = "none";
+
+        updateImbalanceConfiguration();
+    }
 
 
     /*
      * =====================================================
      * INITIAL CONFIGURATION
      * =====================================================
-     *
-     * Checkbox starts unchecked, therefore no balancing
-     * parameter is added yet.
      */
 
     updateModelBalanceConfiguration();

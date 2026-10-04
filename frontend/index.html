@@ -388,11 +388,16 @@
 
                     </div>
 
-                    <div class="form-group">
+                    <div id="imbalance-method-group" class="form-group">
 
                         <label for="imbalance-method">
                             Imbalance Method
                         </label>
+
+                        <small class="form-help">
+                            Select a method to address class imbalance
+                            in the training data.
+                        </small>
 
                         <select
                             id="imbalance-method"
@@ -427,16 +432,16 @@
                             </option>
                         </select>
 
-                        <small class="form-help">
-                            Select a method to address class imbalance
-                            in the training data.
-                        </small>
+                        <!-- Method compatibility information -->
+                        <div
+                            id="imbalance-method-info"
+                            class="form-help imbalance-method-info">
+                        </div>
 
                         <span
                             id="imbalance-method-error"
                             class="field-error">
                         </span>
-
                     </div>
 
                     <div
@@ -520,12 +525,6 @@
 
                         </div>
 
-                    </div>
-
-                    <!-- Method compatibility information -->
-                    <div
-                        id="imbalance-method-info"
-                        class="form-help imbalance-method-info">
                     </div>
 
                 </div>
