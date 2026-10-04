@@ -245,7 +245,7 @@
                 </div>
 
                 <!-- ==================================
-                    STEP 2 — MODEL SELECTION
+                     STEP 2 — DATASET
                 =================================== -->
 
                 <div class="form-section">
@@ -254,6 +254,282 @@
 
                         <span class="step-number">
                             2
+                        </span>
+
+                        <div>
+
+                            <h3>Training Dataset</h3>
+
+                            <p>
+                                Upload the CSV file that will be
+                                used to train the model.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="file-upload-area">
+
+                        <label
+                            for="training-csv"
+                            class="file-upload-label">
+
+                            <span class="upload-icon">
+                                <i class="fa-solid fa-upload" aria-hidden="true"></i>
+                            </span>
+
+                            <span>
+                                Choose CSV File
+                            </span>
+
+                            <small>
+                                CSV files only
+                            </small>
+
+                        </label>
+
+                        <input
+                            type="file"
+                            id="training-csv"
+                            name="training-csv"
+                            accept=".csv">
+
+                    </div>
+
+                    <div
+                        id="dataset-info"
+                        class="dataset-info hidden">
+                    </div>
+
+                    <div
+                        id="dataset-analysis-status"
+                        class="task-status hidden">
+                    </div>
+
+                    <div
+                        id="dataset-analysis-result"
+                        class="dataset-analysis-result hidden">
+                    </div>
+
+                    <div
+                        id="dataset-analysis-error"
+                        class="task-error-container hidden">
+                    </div>
+
+                </div>
+                
+                <!-- ==================================
+                     STEP 3 — INPUT FIELDS
+                =================================== -->
+
+                <div class="form-section">
+
+                    <div class="form-section-header">
+
+                        <span class="step-number">
+                            3
+                        </span>
+
+                        <div>
+
+                            <h3>Input Fields</h3>
+
+                            <p>
+                                Define the variables that your
+                                model will use for prediction.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="input-fields-header">
+
+                        <span>
+                            Field Name
+                        </span>
+
+                        <span>
+                            Nature
+                        </span>
+
+                        <span>
+                            Missing Value Handling
+                        </span>
+
+                        <span>
+                            Feature Engineering
+                        </span>
+
+                        <span>
+                            Scaling / Encoding
+                        </span>
+
+                        <span>
+                            Action
+                        </span>
+
+                    </div>
+
+
+                    <!-- JavaScript will add field rows here -->
+
+                    <div
+                        id="input-fields-container"
+                        class="input-fields-container">
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="add-input-field"
+                        class="secondary-button">
+
+                        + Add Input Field
+
+                    </button>
+
+
+                    <div
+                        id="input-fields-error"
+                        class="validation-message error">
+                    </div>
+
+                </div>
+
+
+
+                <!-- ==================================
+                     STEP 4 — TARGET COLUMN
+                =================================== -->
+
+                <div class="form-section">
+
+                    <div class="form-section-header">
+
+                        <span class="step-number">
+                            4
+                        </span>
+
+                        <div>
+
+                            <h3>Target Column</h3>
+
+                            <p>
+                                Define the column that the model
+                                will predict.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="target-selection">
+
+                        <div class="form-group">
+
+                            <label for="target-column">
+                                Select Target Column
+                            </label>
+
+                            <select
+                                id="target-column"
+                                name="target-column"
+                                disabled>
+
+                                <option value="">
+                                    Upload a CSV first
+                                </option>
+
+                            </select>
+
+                            <small class="form-help">
+                                Only categorical columns with exactly
+                                two classes are available as targets.
+                            </small>
+
+                            <span
+                                id="target-column-error"
+                                class="field-error">
+                            </span>
+
+                        </div>
+
+                        <!-- ------------------------------------------
+                            POSITIVE CLASS
+                        ------------------------------------------- -->
+
+                        <div class="form-group">
+
+                            <label for="positive-class">
+                                Positive Class
+                            </label>
+
+                            <select
+                                id="positive-class"
+                                name="positive-class"
+                                disabled>
+
+                                <option value="">
+                                    Select a target column first
+                                </option>
+
+                            </select>
+
+                            <small class="form-help">
+                                Select which target class represents
+                                the positive outcome.
+                            </small>
+
+                            <span
+                                id="positive-class-error"
+                                class="field-error">
+                            </span>
+
+                        </div>
+
+                        <!-- ------------------------------------------
+                            NEGATIVE CLASS
+                        ------------------------------------------- -->
+
+                        <div
+                            id="negative-class-container"
+                            class="form-group negative-class-group hidden">
+
+                            <label>
+                                Negative Class
+                            </label>
+
+                            <div
+                                id="negative-class"
+                                class="negative-class-value">
+                                —
+                            </div>
+
+                            <small class="form-help">
+                                Automatically determined from the positive class.
+                            </small>
+                            
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- ==================================
+                    STEP 5 — MODEL SELECTION
+                =================================== -->
+
+                <div class="form-section">
+
+                    <div class="form-section-header">
+
+                        <span class="step-number">
+                            5
                         </span>
 
                         <div>
@@ -342,14 +618,14 @@
                 </div>
 
                 <!-- ==================================
-                    STEP 3 — DATA IMBALANCE
+                    STEP 6 — DATA IMBALANCE
                 =================================== -->
 
                 <div class="form-section">
 
                     <div class="form-section-header">
                         <span class="step-number">
-                            3
+                            6
                         </span>
 
                         <div>
@@ -530,285 +806,7 @@
                 </div>
 
                 <!-- ==================================
-                     STEP 3 — DATASET
-                =================================== -->
-
-                <div class="form-section">
-
-                    <div class="form-section-header">
-
-                        <span class="step-number">
-                            3
-                        </span>
-
-                        <div>
-
-                            <h3>Training Dataset</h3>
-
-                            <p>
-                                Upload the CSV file that will be
-                                used to train the model.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="file-upload-area">
-
-                        <label
-                            for="training-csv"
-                            class="file-upload-label">
-
-                            <span class="upload-icon">
-                                <i class="fa-solid fa-upload" aria-hidden="true"></i>
-                            </span>
-
-                            <span>
-                                Choose CSV File
-                            </span>
-
-                            <small>
-                                CSV files only
-                            </small>
-
-                        </label>
-
-                        <input
-                            type="file"
-                            id="training-csv"
-                            name="training-csv"
-                            accept=".csv">
-
-                    </div>
-
-                    <div
-                        id="dataset-info"
-                        class="dataset-info hidden">
-                    </div>
-
-                    <div
-                        id="dataset-analysis-status"
-                        class="task-status hidden">
-                    </div>
-
-                    <div
-                        id="dataset-analysis-result"
-                        class="dataset-analysis-result hidden">
-                    </div>
-
-                    <div
-                        id="dataset-analysis-error"
-                        class="task-error-container hidden">
-                    </div>
-
-                </div>
-                
-                <!-- ==================================
-                     STEP 4 — INPUT FIELDS
-                =================================== -->
-
-                <div class="form-section">
-
-                    <div class="form-section-header">
-
-                        <span class="step-number">
-                            4
-                        </span>
-
-                        <div>
-
-                            <h3>Input Fields</h3>
-
-                            <p>
-                                Define the variables that your
-                                model will use for prediction.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="input-fields-header">
-
-                        <span>
-                            Field Name
-                        </span>
-
-                        <span>
-                            Nature
-                        </span>
-
-                        <span>
-                            Missing Value Handling
-                        </span>
-
-                        <span>
-                            Feature Engineering
-                        </span>
-
-                        <span>
-                            Scaling / Encoding
-                        </span>
-
-                        <span>
-                            Action
-                        </span>
-
-                    </div>
-
-
-                    <!-- JavaScript will add field rows here -->
-
-                    <div
-                        id="input-fields-container"
-                        class="input-fields-container">
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        id="add-input-field"
-                        class="secondary-button">
-
-                        + Add Input Field
-
-                    </button>
-
-
-                    <div
-                        id="input-fields-error"
-                        class="validation-message error">
-                    </div>
-
-                </div>
-
-
-
-                <!-- ==================================
-                     STEP 5 — TARGET COLUMN
-                =================================== -->
-
-                <div class="form-section">
-
-                    <div class="form-section-header">
-
-                        <span class="step-number">
-                            5
-                        </span>
-
-                        <div>
-
-                            <h3>Target Column</h3>
-
-                            <p>
-                                Define the column that the model
-                                will predict.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                    <div class="target-selection">
-
-                        <div class="form-group">
-
-                            <label for="target-column">
-                                Select Target Column
-                            </label>
-
-                            <select
-                                id="target-column"
-                                name="target-column"
-                                disabled>
-
-                                <option value="">
-                                    Upload a CSV first
-                                </option>
-
-                            </select>
-
-                            <small class="form-help">
-                                Only categorical columns with exactly
-                                two classes are available as targets.
-                            </small>
-
-                            <span
-                                id="target-column-error"
-                                class="field-error">
-                            </span>
-
-                        </div>
-
-                        <!-- ------------------------------------------
-                            POSITIVE CLASS
-                        ------------------------------------------- -->
-
-                        <div class="form-group">
-
-                            <label for="positive-class">
-                                Positive Class
-                            </label>
-
-                            <select
-                                id="positive-class"
-                                name="positive-class"
-                                disabled>
-
-                                <option value="">
-                                    Select a target column first
-                                </option>
-
-                            </select>
-
-                            <small class="form-help">
-                                Select which target class represents
-                                the positive outcome.
-                            </small>
-
-                            <span
-                                id="positive-class-error"
-                                class="field-error">
-                            </span>
-
-                        </div>
-
-                        <!-- ------------------------------------------
-                            NEGATIVE CLASS
-                        ------------------------------------------- -->
-
-                        <div
-                            id="negative-class-container"
-                            class="form-group negative-class-group hidden">
-
-                            <label>
-                                Negative Class
-                            </label>
-
-                            <div
-                                id="negative-class"
-                                class="negative-class-value">
-                                —
-                            </div>
-
-                            <small class="form-help">
-                                Automatically determined from the positive class.
-                            </small>
-                            
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-
-                <!-- ==================================
-                     STEP 6 — VALIDATION / TRAINING
+                     STEP 7 — VALIDATION / TRAINING
                 =================================== -->
                 <div
                     id="dataset-validation-status"
