@@ -14,7 +14,8 @@ from .config import (
     SUPPORTED_SCALING,
     SUPPORTED_ENCODING,
     SAFE_UNIQUE_PERCENTAGE,
-    SAFE_COLUMN_INCREASE_PERCENTAGE
+    SAFE_COLUMN_INCREASE_PERCENTAGE,
+    MODEL_CONFIGURATION,
 )
 
 from .error_handler import api_error
@@ -848,6 +849,7 @@ def validate_target_data(dataframe, target):
 
     target_name = target["name"]
     positive_class = target.get("positive_class", "not_found")
+    negative_class = target.get("negative_class", "not_found")
 
     target_data = dataframe[target_name]
     target_classes = (target_data.dropna().unique().tolist())
@@ -891,7 +893,52 @@ def validate_target_data(dataframe, target):
             },
         )
 
-    negative_class = next(value for value in target_classes if value != positive_class)
+    if negative_class not in target_classes:
+        api_error(
+            status_code=400,
+            code="INVALID_NEGATIVE_CLASS",
+            title="Invalid Negative Class",
+            message=(
+                f"Selected negative class '{negative_class}' "
+                "is not one of the target classes."
+            ),
+            details={
+                "selected": negative_class,
+                "number_of_classes": len(target_classes),
+                "classes": target_classes,
+            },
+        )
+
+    if negative_class == positive_class:
+        api_error(
+            status_code=400,
+            code="INVALID_TARGET_CLASSES",
+            title="Invalid Target Classes",
+            message="Positive and negative classes must be different.",
+            details={
+                "positive_class": positive_class,
+                "negative_class": negative_class,
+            },
+        )
+
+    expected_negative_class = next(
+        value for value in target_classes
+        if value != positive_class
+    )
+
+    if negative_class != expected_negative_class:
+        api_error(
+            status_code=400,
+            code="INVALID_NEGATIVE_CLASS",
+            title="Invalid Negative Class",
+            message="The selected negative class does not match the binary target classes.",
+            details={
+                "selected": negative_class,
+                "expected": expected_negative_class,
+                "classes": target_classes,
+            },
+        )
+    
     target["positive_class"] = positive_class
     target["negative_class"] = negative_class
     target["classes"] = [str(value) for value in target_classes]
@@ -1144,10 +1191,442 @@ def validate_imbalance_configuration(dataframe: pd.DataFrame, target: dict, fiel
 
     return class_imbalance_validation, class_imbalance_warning
 
+def validate_model_parameter_compatibility(
+    model_type: str,
+    parameters: dict,
+):
+    """
+    Validate compatibility between model hyperparameters.
+    """
+
+    # ---------------------------------------------------------
+    # Logistic Regression
+    # ---------------------------------------------------------
+
+    if model_type == "logistic_regression":
+
+        penalty = parameters.get("penalty")
+        solver = parameters.get("solver")
+
+        # LBFGS supports only L2 or no penalty.
+        if solver == "lbfgs" and penalty not in (None, "l2"):
+
+            api_error(
+                status_code=400,
+                code="INCOMPATIBLE_MODEL_PARAMETERS",
+                title="Incompatible Model Parameters",
+                message=(
+                    "The selected penalty is not compatible "
+                    "with the selected Logistic Regression solver."
+                ),
+                details={
+                    "model": model_type,
+                    "parameters": {
+                        "penalty": penalty,
+                        "solver": solver,
+                    },
+                    "compatible_penalties": {
+                        "lbfgs": ["l2"],
+                        "liblinear": ["l1", "l2"],
+                        "saga": ["l1", "l2", "elasticnet"],
+                    },
+                },
+            )
+
+        # Liblinear does not support Elastic Net.
+        if solver == "liblinear" and penalty == "elasticnet":
+
+            api_error(
+                status_code=400,
+                code="INCOMPATIBLE_MODEL_PARAMETERS",
+                title="Incompatible Model Parameters",
+                message=(
+                    "Elastic Net penalty is not compatible "
+                    "with the Liblinear solver."
+                ),
+                details={
+                    "model": model_type,
+                    "parameters": {
+                        "penalty": penalty,
+                        "solver": solver,
+                    },
+                },
+            )
+
+        # Elastic Net requires SAGA.
+        if penalty == "elasticnet" and solver != "saga":
+
+            api_error(
+                status_code=400,
+                code="INCOMPATIBLE_MODEL_PARAMETERS",
+                title="Incompatible Model Parameters",
+                message=(
+                    "Elastic Net penalty requires the SAGA solver."
+                ),
+                details={
+                    "model": model_type,
+                    "parameters": {
+                        "penalty": penalty,
+                        "solver": solver,
+                    },
+                },
+            )
+
+    # ---------------------------------------------------------
+    # SVM
+    # ---------------------------------------------------------
+
+    elif model_type == "svm":
+
+        kernel = parameters.get("kernel")
+
+        # degree and coef0 are meaningful for polynomial kernels,
+        # but the frontend allows them for all kernels. They are
+        # therefore not treated as invalid combinations here.
+        #
+        # No additional compatibility restriction is required.
+
+        _ = kernel
+
+    # ---------------------------------------------------------
+    # Random Forest
+    # ---------------------------------------------------------
+
+    elif model_type == "random_forest":
+
+        bootstrap = parameters.get("bootstrap")
+        class_weight = parameters.get("class_weight")
+
+        # balanced_subsample is meaningful with bootstrap sampling.
+        if (
+            class_weight == "balanced_subsample"
+            and bootstrap is False
+        ):
+            api_error(
+                status_code=400,
+                code="INCOMPATIBLE_MODEL_PARAMETERS",
+                title="Incompatible Model Parameters",
+                message=(
+                    "Balanced Subsample class weighting requires "
+                    "bootstrap sampling to be enabled."
+                ),
+                details={
+                    "model": model_type,
+                    "parameters": {
+                        "bootstrap": bootstrap,
+                        "class_weight": class_weight,
+                    },
+                },
+            )
+
+    # ---------------------------------------------------------
+    # Other models
+    # ---------------------------------------------------------
+
+    # Gradient Boosting, KNN, and XGBoost currently have no
+    # additional parameter-combination restrictions defined here.
+
+def validate_model_parameters(model_type: str, parameters: dict):
+    """
+    Validate model hyperparameters against the supported
+    frontend model configuration.
+    """
+
+    configuration = MODEL_CONFIGURATION[model_type]["parameters"]
+
+    # ---------------------------------------------------------
+    # 1. Check for unsupported parameters
+    # ---------------------------------------------------------
+
+    unsupported_parameters = [
+        parameter
+        for parameter in parameters
+        if parameter not in configuration
+    ]
+
+    if unsupported_parameters:
+        api_error(
+            status_code=400,
+            code="UNSUPPORTED_MODEL_PARAMETER",
+            title="Unsupported Model Parameter",
+            message=(
+                f"One or more parameters are not supported "
+                f"for model '{model_type}'."
+            ),
+            details={
+                "model": model_type,
+                "unsupported_parameters": unsupported_parameters,
+                "allowed_parameters": list(configuration.keys()),
+            },
+        )
+
+    # ---------------------------------------------------------
+    # 2. Validate each supplied parameter
+    # ---------------------------------------------------------
+
+    for parameter_name, value in parameters.items():
+
+        rule = configuration[parameter_name]
+        parameter_type = rule["type"]
+
+        # -----------------------------------------------------
+        # Number
+        # -----------------------------------------------------
+
+        if parameter_type == "number":
+
+            if isinstance(value, bool) or not isinstance(
+                value, (int, float)
+            ):
+                api_error(
+                    status_code=400,
+                    code="INVALID_MODEL_PARAMETER_TYPE",
+                    title="Invalid Model Parameter",
+                    message=(
+                        f"Model parameter '{parameter_name}' "
+                        "must be a number."
+                    ),
+                    details={
+                        "model": model_type,
+                        "parameter": parameter_name,
+                        "selected": value,
+                        "expected_type": "number",
+                    },
+                )
+
+            if not np.isfinite(value):
+                api_error(
+                    status_code=400,
+                    code="INVALID_MODEL_PARAMETER_VALUE",
+                    title="Invalid Model Parameter Value",
+                    message=(
+                        f"Model parameter '{parameter_name}' "
+                        "must be a finite number."
+                    ),
+                    details={
+                        "model": model_type,
+                        "parameter": parameter_name,
+                        "selected": value,
+                    },
+                )
+
+            minimum = rule.get("min")
+
+            if minimum is not None and value < minimum:
+                api_error(
+                    status_code=400,
+                    code="INVALID_MODEL_PARAMETER_VALUE",
+                    title="Invalid Model Parameter Value",
+                    message=(
+                        f"Model parameter '{parameter_name}' "
+                        f"must be at least {minimum}."
+                    ),
+                    details={
+                        "model": model_type,
+                        "parameter": parameter_name,
+                        "selected": value,
+                        "minimum": minimum,
+                    },
+                )
+
+            maximum = rule.get("max")
+
+            if maximum is not None and value > maximum:
+                api_error(
+                    status_code=400,
+                    code="INVALID_MODEL_PARAMETER_VALUE",
+                    title="Invalid Model Parameter Value",
+                    message=(
+                        f"Model parameter '{parameter_name}' "
+                        f"must be at most {maximum}."
+                    ),
+                    details={
+                        "model": model_type,
+                        "parameter": parameter_name,
+                        "selected": value,
+                        "maximum": maximum,
+                    },
+                )
+
+        # -----------------------------------------------------
+        # Boolean
+        # -----------------------------------------------------
+
+        elif parameter_type == "boolean":
+
+            if not isinstance(value, bool):
+                api_error(
+                    status_code=400,
+                    code="INVALID_MODEL_PARAMETER_TYPE",
+                    title="Invalid Model Parameter",
+                    message=(
+                        f"Model parameter '{parameter_name}' "
+                        "must be a Boolean."
+                    ),
+                    details={
+                        "model": model_type,
+                        "parameter": parameter_name,
+                        "selected": value,
+                        "expected_type": "boolean",
+                    },
+                )
+
+        # -----------------------------------------------------
+        # Select
+        # -----------------------------------------------------
+
+        elif parameter_type == "select":
+
+            allowed_values = rule["options"]
+
+            if value not in allowed_values:
+                api_error(
+                    status_code=400,
+                    code="INVALID_MODEL_PARAMETER_VALUE",
+                    title="Invalid Model Parameter Value",
+                    message=(
+                        f"Model parameter '{parameter_name}' "
+                        f"has an unsupported value for model "
+                        f"'{model_type}'."
+                    ),
+                    details={
+                        "model": model_type,
+                        "parameter": parameter_name,
+                        "selected": value,
+                        "allowed_values": allowed_values,
+                    },
+                )
+
+        # -----------------------------------------------------
+        # Select or null
+        # -----------------------------------------------------
+
+        elif parameter_type == "select_or_null":
+
+            allowed_values = rule["options"]
+
+            if value not in allowed_values:
+                api_error(
+                    status_code=400,
+                    code="INVALID_MODEL_PARAMETER_VALUE",
+                    title="Invalid Model Parameter Value",
+                    message=(
+                        f"Model parameter '{parameter_name}' "
+                        f"has an unsupported value for model "
+                        f"'{model_type}'."
+                    ),
+                    details={
+                        "model": model_type,
+                        "parameter": parameter_name,
+                        "selected": value,
+                        "allowed_values": allowed_values,
+                    },
+                )
+
+        else:
+            api_error(
+                status_code=500,
+                code="INVALID_MODEL_PARAMETER_RULE",
+                title="Invalid Model Parameter Rule",
+                message=(
+                    f"Unsupported parameter validation type "
+                    f"'{parameter_type}'."
+                ),
+                details={
+                    "model": model_type,
+                    "parameter": parameter_name,
+                },
+            )
+
+def validate_model_configuration(model):
+    """
+    Validate the basic structure of the selected model configuration.
+    """
+
+    # ---------------------------------------------------------
+    # Validate model object
+    # ---------------------------------------------------------
+
+    if not isinstance(model, dict):
+        api_error(
+            status_code=400,
+            code="INVALID_MODEL_CONFIGURATION",
+            title="Invalid Model Configuration",
+            message="Model configuration must be a JSON object.",
+            details=None,
+        )
+
+    # ---------------------------------------------------------
+    # Validate model type
+    # ---------------------------------------------------------
+
+    model_type = model.get("type")
+
+    if not isinstance(model_type, str) or not model_type.strip():
+        api_error(
+            status_code=400,
+            code="MODEL_TYPE_REQUIRED",
+            title="Model Type Required",
+            message="A model type must be selected.",
+            details=None,
+        )
+
+    model_type = model_type.strip()
+
+    if model_type not in MODEL_CONFIGURATION:
+        api_error(
+            status_code=400,
+            code="UNSUPPORTED_MODEL",
+            title="Unsupported Model",
+            message=(
+                f"Model '{model_type}' is not supported."
+            ),
+            details={
+                "model": model_type,
+                "supported_models": list(MODEL_CONFIGURATION.keys()),
+            },
+        )
+
+    # ---------------------------------------------------------
+    # Validate parameters object
+    # ---------------------------------------------------------
+
+    parameters = model.get("parameters")
+
+    if parameters is None:
+        parameters = {}
+
+    if not isinstance(parameters, dict):
+        api_error(
+            status_code=400,
+            code="INVALID_MODEL_PARAMETERS",
+            title="Invalid Model Parameters",
+            message=(
+                "Model parameters must be provided as a JSON object."
+            ),
+            details={
+                "model": model_type,
+            },
+        )
+
+    # ---------------------------------------------------------
+    # Validate hyperparameters
+    # ---------------------------------------------------------
+
+    validate_model_parameters(
+        model_type=model_type,
+        parameters=parameters,
+    )
+
+    validate_model_parameter_compatibility(
+        model_type=model_type,
+        parameters=parameters,
+    )
+
 # =========================================================
 # COMPLETE DATASET VALIDATION
 # =========================================================
-def validate_dataset(dataframe: pd.DataFrame, fields: list, target: dict, imbalance: dict):
+def validate_dataset(dataframe: pd.DataFrame, fields: list, target: dict, model: dict, imbalance: dict):
     """
     Run all dataset validation checks.
 
@@ -1177,6 +1656,9 @@ def validate_dataset(dataframe: pd.DataFrame, fields: list, target: dict, imbala
 
     # Validate target data
     target = validate_target_data(dataframe, target)
+
+    # Validate model configuration
+    validate_model_configuration(model)
 
     # Imabalance
     class_imbalance_validation, class_imbalance_warning = validate_imbalance_configuration(dataframe=dataframe, target=target, fields=fields, imbalance=imbalance)

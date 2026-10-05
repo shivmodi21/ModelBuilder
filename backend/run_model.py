@@ -22,10 +22,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 
 import joblib
 
-from .config import (
-    MODELS_DIR,
-    MAX_ITERATIONS,
-)
+from .config import MODELS_DIR
 
 from .dataset_analysis import _clean_series, _normalize_column_name
 
@@ -117,7 +114,7 @@ def _output_fields(fields):
 # =========================================================
 
 MODEL_FACTORIES = {
-    "logistic_regression": LogisticRegression(max_iter=MAX_ITERATIONS),
+    "logistic_regression": LogisticRegression(),
     "decision_tree": DecisionTreeClassifier(random_state=42),
     "random_forest": RandomForestClassifier(n_estimators=200, random_state=42),
     "gradient_boosting": GradientBoostingClassifier(random_state=42),
@@ -140,9 +137,10 @@ MODEL_FACTORIES = {
 # GET CLASSIFIER
 # =========================================================
 
-def get_classifier(model):
+def get_classifier(model, scale_pos_weight=1):
     """
-    Return a fresh classifier based on the user's selection.
+    Return a fresh classifier based on the user's selection
+    and apply the user's model parameters.
     """
 
     model_type = model["type"]
@@ -151,11 +149,21 @@ def get_classifier(model):
     if model_type not in MODEL_FACTORIES:
         raise ValueError(f"Unsupported model: {model_type}")
 
-    # Create a fresh instance rather than reusing the
-    # classifier stored in MODEL_FACTORIES.
+    # Get the default classifier configuration.
     classifier = MODEL_FACTORIES[model_type]
 
-    return classifier.__class__(**classifier.get_params())
+    # Start with the factory defaults so important settings such as
+    # random_state, probability, objective, eval_metric, etc. are preserved.
+    classifier_params = classifier.get_params()
+
+    # Override the defaults with parameters selected by the user.
+    classifier_params.update(model_params)
+
+    if (model_type == "xgboost" and model_params.get("scale_pos_weight") == "auto"):
+        classifier_params["scale_pos_weight"] = scale_pos_weight
+
+    # Create a fresh classifier with the final parameters.
+    return classifier.__class__(**classifier_params)
 
 
 # =========================================================
@@ -469,7 +477,7 @@ def create_sampler(imbalance, n_numerical, n_categorical, random_state=42):
 # =========================================================
 # CREATE MODEL PIPELINE
 # =========================================================
-def create_model_pipeline(fields, model, imbalance, random_state=42):
+def create_model_pipeline(fields, model, scale_pos_weight, imbalance, random_state=42):
     """
     Combine preprocessing, resampling, encoding, and the classifier.
 
@@ -490,25 +498,55 @@ def create_model_pipeline(fields, model, imbalance, random_state=42):
     if sampler is not None:
         steps.append(("sampler", sampler))
     steps.append(("encoder", CategoricalEncoder(fields)))
-    steps.append(("classifier", get_classifier(model)))
+    steps.append(("classifier", get_classifier(model, scale_pos_weight=scale_pos_weight)))
 
     return ModelPipeline(steps=steps)
 
 
-def evaluate(X_eval, y_eval, pipeline, positive_class):
+def evaluate(X_eval, y_eval, pipeline):
     predictions = pipeline.predict(X_eval)
+
     result = {
-        "accuracy": float(accuracy_score(y_eval, predictions)),
-        "precision": float(precision_score(y_eval, predictions, pos_label=positive_class, zero_division=0)),
-        "recall": float(recall_score(y_eval, predictions, pos_label=positive_class, zero_division=0)),
-        "f1_score": float(f1_score(y_eval, predictions, pos_label=positive_class, zero_division=0)),
+        "accuracy": float(
+            accuracy_score(y_eval, predictions)
+        ),
+        "precision": float(
+            precision_score(
+                y_eval,
+                predictions,
+                pos_label=1,
+                zero_division=0,
+            )
+        ),
+        "recall": float(
+            recall_score(
+                y_eval,
+                predictions,
+                pos_label=1,
+                zero_division=0,
+            )
+        ),
+        "f1_score": float(
+            f1_score(
+                y_eval,
+                predictions,
+                pos_label=1,
+                zero_division=0,
+            )
+        ),
         "roc_auc": None,
     }
+
     try:
-        class_index = list(pipeline.named_steps["classifier"].classes_).index(positive_class)
-        result["roc_auc"] = float(roc_auc_score(y_eval, pipeline.predict_proba(X_eval)[:, class_index]))
+        result["roc_auc"] = float(
+            roc_auc_score(
+                y_eval,
+                pipeline.predict_proba(X_eval)[:, 1],
+            )
+        )
     except Exception:
         pass
+
     return result
 
 
@@ -516,7 +554,7 @@ def evaluate(X_eval, y_eval, pipeline, positive_class):
 # TRAIN MODEL
 # =========================================================
 
-def train_model(dataframe, fields, target, imbalance, model, random_state=42):
+def train_model(dataframe, fields, target, model, imbalance, random_state=42):
     """
     Train the selected binary classification model.
 
@@ -529,6 +567,7 @@ def train_model(dataframe, fields, target, imbalance, model, random_state=42):
     feature_names = [field["name"] for field in fields]
     target_name = target["name"]
     positive_class = target["positive_class"]
+    negative_class = target["negative_class"]
 
     # X and y
     X = dataframe[feature_names].copy()
@@ -550,10 +589,14 @@ def train_model(dataframe, fields, target, imbalance, model, random_state=42):
     X = X.astype(object).where(pd.notna(X), np.nan)
     y = y.astype(object).where(pd.notna(y), np.nan)
 
-    classes = sorted(y.unique(), key=lambda value: str(value))
+    y = y.map({negative_class: 0, positive_class: 1,})
 
-    if positive_class not in classes:
-        raise ValueError(f"Positive class '{positive_class}' is not present in the target column.")
+    classes = sorted(y.dropna().unique().tolist())
+
+    if classes != [0, 1]:
+        raise ValueError(
+            "The target column must contain both the selected negative and positive classes."
+        )
 
     # Split 70% training, 20% validation, and 10% test.
     try:
@@ -562,9 +605,21 @@ def train_model(dataframe, fields, target, imbalance, model, random_state=42):
     except ValueError as error:
         raise ValueError(f"Unable to split dataset: {error}")
 
+    positive_count = int((y_train == 1).sum())
+    negative_count = int((y_train == 0).sum())
+
+    scale_pos_weight = (
+        negative_count / positive_count
+        if positive_count > 0
+        else 1.0
+    )
+
     # Resampling is a pipeline step. It runs after imputation, feature
     # engineering, and scaling, and it is skipped during prediction.
-    pipeline = create_model_pipeline(fields=fields, model=model, imbalance=imbalance, random_state=random_state)
+    pipeline = create_model_pipeline(fields=fields, model=model, scale_pos_weight=scale_pos_weight, imbalance=imbalance, random_state=random_state)
+
+    pipeline.negative_class = negative_class
+    pipeline.positive_class = positive_class
 
     # Train
     try:
@@ -577,14 +632,24 @@ def train_model(dataframe, fields, target, imbalance, model, random_state=42):
 
     # Results
     metrics = {
-        "validation": evaluate(X_validation, y_validation, pipeline, positive_class),
-        "test": evaluate(X_test, y_test, pipeline, positive_class),
+        "validation": evaluate(
+            X_validation,
+            y_validation,
+            pipeline,
+        ),
+        "test": evaluate(
+            X_test,
+            y_test,
+            pipeline,
+        ),
     }
 
     return {
         "model_pipeline": pipeline,
         "features": feature_names,
-        "target_classes": [str(value) for value in classes],
+        "target_classes": [str(negative_class), str(positive_class)],
+        "positive_class": str(positive_class),
+        "negative_class": str(negative_class),
         "train_rows": train_rows,
         "validation_rows": len(X_validation),
         "test_rows": len(X_test),
@@ -598,34 +663,40 @@ def train_model(dataframe, fields, target, imbalance, model, random_state=42):
 def predict(model, input_data):
     """
     Generate prediction from a trained model.
+
+    The model internally uses:
+        0 = negative class
+        1 = positive class
+
+    The API converts these values back to the original
+    target class labels before returning the result.
+
     input_data must be a pandas DataFrame.
     """
+
     prediction = model.predict(input_data)
-    result: dict[str, str | dict[str, float]] = {"prediction": str(prediction[0])}
+
+    negative_class = getattr(model, "negative_class", 0)
+    positive_class = getattr(model, "positive_class", 1)
+
+    prediction_value = int(prediction[0])
+
+    if prediction_value == 1:
+        prediction_label = positive_class
+    else:
+        prediction_label = negative_class
+
+    result: dict[str, str | dict[str, float]] = {
+        "prediction": str(prediction_label)
+    }
 
     # Probability
     if hasattr(model, "predict_proba"):
-        probabilities = (model.predict_proba(input_data)[0])
-
-        # Pipeline -> classifier
-        if hasattr(model, "named_steps"):
-            classifier = (model.named_steps.get("classifier"))
-
-            if classifier is not None:
-                classes = classifier.classes_
-            else:
-                classes = model.classes_
-        else:
-            classes = model.classes_
-
+        probabilities = model.predict_proba(input_data)[0]
 
         result["probabilities"] = {
-            str(cls): float(probability)
-            for cls, probability
-            in zip(
-                classes,
-                probabilities
-            )
+            str(negative_class): float(probabilities[0]),
+            str(positive_class): float(probabilities[1]),
         }
 
     return result

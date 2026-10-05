@@ -221,8 +221,8 @@ async def validate_training_dataset(
     csv_file: UploadFile = File(...),
     fields: str = Form(...),
     target: str = Form(...),
-    imbalance: str = Form(...),
     model: str = Form(...),
+    imbalance: str = Form(...),
 ):
     # Validate file type
     if not csv_file or not csv_file.filename:
@@ -334,6 +334,7 @@ async def validate_training_dataset(
             dataframe=dataframe,
             fields=fields_data,
             target=target_data,
+            model=model_data,
             imbalance=imbalance_data
         )
 
@@ -365,8 +366,8 @@ async def train_endpoint(
     csv_file: UploadFile = File(...),
     fields: str = Form(...),
     target: str = Form(...),
-    imbalance: str = Form(...),
     model: str = Form(...),
+    imbalance: str = Form(...),
 ):
     # 1. Validate CSV file
     if not csv_file or not csv_file.filename:
@@ -477,6 +478,7 @@ async def train_endpoint(
             dataframe=dataframe,
             fields=fields_data,
             target=target_data,
+            model=model_data,
             imbalance=imbalance_data,
         )
     except HTTPException:
@@ -505,8 +507,8 @@ async def train_endpoint(
             dataframe=dataframe,
             fields=features,
             target=target_data,
+            model=model_data,
             imbalance=imbalance_data,
-            model=model_data
         )
 
     except ValueError as error:

@@ -270,12 +270,8 @@ const MODEL_HYPERPARAMETERS = {
             {
                 name: "bootstrap",
                 label: "Bootstrap",
-                type: "select",
-                default: "true",
-                options: [
-                    { value: "true", label: "True" },
-                    { value: "false", label: "False" }
-                ]
+                type: "boolean",
+                default: true,
             }
         ],
 
@@ -657,7 +653,8 @@ let selectedTargetClasses = [];
 
 let targetConfig = {
     name: "",
-    positive_class: ""
+    positive_class: "",
+    negative_class: ""
 };
 
 let imbalanceConfig = {
@@ -1638,7 +1635,11 @@ function createModelParameterInput(parameter) {
 
         input.value = parameter.default;
     }
-
+    else if (parameter.type === "boolean") {
+        input = document.createElement("input");
+        input.type = "checkbox";
+        input.checked = parameter.default;
+    }
     else {
 
         input = document.createElement("input");
@@ -1746,10 +1747,8 @@ function updateModelParameters() {
                 : input.value;
         }
 
-        else if (parameter.name === "bootstrap") {
-
-            parameters[parameter.name] =
-                input.value === "true";
+        else if (parameter.type === "boolean") {
+            parameters[parameter.name] = input.checked;
         }
 
         else if (parameter.name === "max_features" &&
@@ -3115,6 +3114,7 @@ function handleTargetColumnChange() {
     
     targetConfig.name = targetName;
     targetConfig.positive_class = "";
+    targetConfig.negative_class = "";
     selectedTargetClasses = [];
 
     resetTargetClassSelection();
@@ -3148,6 +3148,7 @@ function handlePositiveClassChange() {
     clearError("positive-class-error");
 
     if (!targetConfig.positive_class) {
+        targetConfig.negative_class = "";
         negativeClassDisplay.textContent = "—";
         negativeClassContainer.classList.add("hidden");
 
@@ -3159,6 +3160,7 @@ function handlePositiveClassChange() {
     // Determine negative class
     const negativeClass = selectedTargetClasses.find(value => String(value) !== String(targetConfig.positive_class));
 
+    targetConfig.negative_class = negativeClass !== undefined ? negativeClass : "";
     negativeClassDisplay.textContent = negativeClass !== undefined ? String(negativeClass) : "—";
     negativeClassContainer.classList.remove("hidden");
 
@@ -3269,6 +3271,11 @@ function validatePositiveClass() {
 
     if (!valid) {
         setError("positive-class-error", "Please select a valid positive class.");
+        return false;
+    }
+
+    if (!targetConfig.negative_class) {
+        setError("positive-class-error", "Unable to determine the negative class.");
         return false;
     }
 
@@ -4269,6 +4276,7 @@ function displayValidationResult(result) {
 function resetTargetClassSelection() {
     selectedTargetClasses = [];
     targetConfig.positive_class = "";
+    targetConfig.negative_class = "";
 
     positiveClassInput.innerHTML = `
         <option value="">
@@ -4555,7 +4563,7 @@ validateDatasetButton.addEventListener("click", async () => {
                 detail: {
                     success: false,
                     error: {
-                        code: "CLIENT_DATA_VALIDATOIN_ERROR",
+                        code: "CLIENT_DATA_VALIDATION_ERROR",
                         title: "Dataset Validation Failed",
                         message: "Please fix the configuration errors above.",
                         details: null
@@ -4573,7 +4581,7 @@ validateDatasetButton.addEventListener("click", async () => {
                 detail: {
                     success: false,
                     error: {
-                        code: "CLIENT_DATA_VALIDATOIN_ERROR",
+                        code: "CLIENT_DATA_VALIDATION_ERROR",
                         title: "Dataset Validation Failed",
                         message: "Please select a CSV file.",
                         details: null
@@ -4605,8 +4613,8 @@ validateDatasetButton.addEventListener("click", async () => {
         formData.append("csv_file", file);
         formData.append("fields", JSON.stringify(getFieldsForAPI()));
         formData.append("target", JSON.stringify(targetConfig));
-        formData.append("imbalance", JSON.stringify(imbalanceConfig));
         formData.append("model", JSON.stringify(modelConfig));
+        formData.append("imbalance", JSON.stringify(imbalanceConfig));
 
         try {
 
@@ -4640,7 +4648,7 @@ validateDatasetButton.addEventListener("click", async () => {
                 detail: {
                     success: false,
                     error: {
-                        code: "CLIENT_DATA_VALIDATOIN_ERROR",
+                        code: "CLIENT_DATA_VALIDATION_ERROR",
                         title: "Dataset Validation Failed",
                         message: error.message || "An unexpected error occurred while validating the dataset.",
                         details: null
@@ -4717,8 +4725,8 @@ trainModelButton.addEventListener("click", async () => {
         formData.append("csv_file", file);
         formData.append("fields", JSON.stringify(getFieldsForAPI()));
         formData.append("target", JSON.stringify(targetConfig));
-        formData.append("imbalance", JSON.stringify(imbalanceConfig));
         formData.append("model", JSON.stringify(modelConfig));
+        formData.append("imbalance", JSON.stringify(imbalanceConfig));
         
         try {
             // Send training request
