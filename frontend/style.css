@@ -967,15 +967,18 @@ select {
 
 .dataset-analysis-table-wrapper {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border: 1px solid var(--border);
     border-radius: 7px;
 }
 
 .dataset-analysis-table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;
+    table-layout: auto;
     font-size: 0.8rem;
 }
 
@@ -994,6 +997,12 @@ select {
     text-transform: uppercase;
     letter-spacing: 0.3px;
     white-space: nowrap;
+    min-width: max-content;
+}
+
+.dataset-analysis-table th:first-child,
+.dataset-analysis-table td:first-child {
+    min-width: 9.5rem;
 }
 
 .dataset-analysis-table td {
@@ -1010,8 +1019,6 @@ select {
 
 .dataset-analysis-column-name {
     font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
@@ -1196,50 +1203,59 @@ select {
 
 .validation-table-wrapper {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border: 1px solid var(--border);
     border-radius: 8px;
 }
 
 .validation-table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
+    table-layout: auto;
     font-size: 0.82rem;
 }
 
 .input-validation-table {
-    min-width: 780px;
-    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+    table-layout: auto;
+}
+
+.input-validation-table th {
+    min-width: max-content;
 }
 
 .input-validation-table th:nth-child(1),
 .input-validation-table td:nth-child(1) {
-    width: 20%;
+    min-width: 9.5rem;
 }
 
 .input-validation-table th:nth-child(2),
 .input-validation-table td:nth-child(2) {
-    width: 12%;
+    min-width: max-content;
 }
 
 .input-validation-table th:nth-child(3),
 .input-validation-table td:nth-child(3) {
-    width: 17%;
+    min-width: max-content;
 }
 
 .input-validation-table th:nth-child(4),
 .input-validation-table td:nth-child(4) {
-    width: 17%;
+    min-width: max-content;
 }
 
 .input-validation-table th:nth-child(5),
 .input-validation-table td:nth-child(5) {
-    width: 19%;
+    min-width: max-content;
 }
 
 .input-validation-table th:nth-child(6),
 .input-validation-table td:nth-child(6) {
-    width: 15%;
+    min-width: max-content;
 }
 
 .validation-table th,
@@ -1257,6 +1273,16 @@ select {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    white-space: nowrap;
+    min-width: max-content;
+}
+
+.validation-table th:first-child,
+.validation-table td:first-child {
+    min-width: 9.5rem;
+}
+
+.validation-table .validation-field-name {
     white-space: nowrap;
 }
 
@@ -2036,10 +2062,6 @@ select {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .input-validation-table {
-        min-width: 760px;
-    }
-
     .training-metrics-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -2297,6 +2319,15 @@ select {
 ========================================================= */
 
 @media (max-width: 480px) {
+
+    .dataset-analysis-table th:first-child,
+    .dataset-analysis-table td:first-child,
+    .validation-table th:first-child,
+    .validation-table td:first-child,
+    .input-validation-table th:nth-child(1),
+    .input-validation-table td:nth-child(1) {
+        min-width: 11rem;
+    }
 
     .dataset-analysis-grid {
         grid-template-columns: 1fr;
